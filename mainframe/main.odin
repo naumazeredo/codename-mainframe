@@ -7,14 +7,10 @@ import "core:mem"
 import "core:strings"
 import "core:fmt"
 
-import "shared:io"
-
 VIEW_W :: 1280;
 VIEW_H :: 720;
 
 main :: proc() {
-  fmt.println("starting!");
-
   sdl.init(sdl.Init_Flags.Everything);
   defer sdl.quit();
 
@@ -31,17 +27,15 @@ main :: proc() {
   // /Test Region
   // -----------
 
-  start_cap_frame();
-
   for {
+    start_new_frame(game_state);
+
     running := handle_input(game_state);
     if !running {
       break;
     }
 
     render(game_state);
-
-    cap_frame();
 
     // -------
     // Physics

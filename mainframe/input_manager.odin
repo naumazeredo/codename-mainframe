@@ -1,6 +1,7 @@
 package mainframe
 
 import "core:mem"
+import "core:fmt"
 
 import sdl "shared:odin-sdl2"
 
@@ -40,6 +41,18 @@ handle_input :: proc(game_state : ^GameState) -> bool {
         // @Todo(naum): change game state
         return false;
       }
+
+      /*
+      if e.key.keysym.sym == i32(sdl.SDLK_UP) {
+        game_state.game_time_scale += 0.01;
+        fmt.printf("game_time_scale %f\n", game_state.game_time_scale);
+      }
+
+      if e.key.keysym.sym == i32(sdl.SDLK_DOWN) {
+        game_state.game_time_scale -= 0.01;
+        fmt.printf("game_time_scale %f\n", game_state.game_time_scale);
+      }
+      */
     }
   }
 
