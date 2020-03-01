@@ -16,26 +16,28 @@ main :: proc() {
 
   assert(sdl_ttf.init() != -1);
 
-  game_state := create_game_state();
-  defer delete_game_state(game_state);
+  game_manager := create_game_manager();
+  defer delete_game_manager(game_manager);
 
   // -----------
   // Test Region
   // -----------
+
+  generate_terrain(game_manager);
 
   // -----------
   // /Test Region
   // -----------
 
   for {
-    start_new_frame(game_state);
+    start_new_frame(game_manager);
 
-    running := handle_input(game_state);
+    running := handle_input(game_manager);
     if !running {
       break;
     }
 
-    render(game_state);
+    render(game_manager);
 
     // -------
     // Physics

@@ -27,7 +27,7 @@ new_input_manager :: proc() -> ^InputManager {
 
 // @Todo(naum): handle key inputs properly (key up, key down, key pressed)
 // @Note(naum): sdl.poll_event must be in same thread that set video mode
-handle_input :: proc(game_state : ^GameState) -> bool {
+handle_input :: proc(game_manager : ^GameManager) -> bool {
   e: sdl.Event;
   for sdl.poll_event(&e) != 0 {
     if e.type == sdl.Event_Type.Quit {
@@ -44,13 +44,13 @@ handle_input :: proc(game_state : ^GameState) -> bool {
 
       /*
       if e.key.keysym.sym == i32(sdl.SDLK_UP) {
-        game_state.game_time_scale += 0.01;
-        fmt.printf("game_time_scale %f\n", game_state.game_time_scale);
+        game_manager.game_time_scale += 0.01;
+        fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
       }
 
       if e.key.keysym.sym == i32(sdl.SDLK_DOWN) {
-        game_state.game_time_scale -= 0.01;
-        fmt.printf("game_time_scale %f\n", game_state.game_time_scale);
+        game_manager.game_time_scale -= 0.01;
+        fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
       }
       */
     }

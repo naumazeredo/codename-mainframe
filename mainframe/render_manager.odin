@@ -1,13 +1,14 @@
 package mainframe
 
 import "core:strings"
+import "core:fmt"
 
 import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
 
 // @Note(naum): remember Mac issue with screen size vs render size
-render :: proc(game_state : ^GameState) {
-  renderer := game_state.renderer;
+render :: proc(game_manager : ^GameManager) {
+  using game_manager;
 
   viewport_rect : sdl.Rect;
 
@@ -16,36 +17,38 @@ render :: proc(game_state : ^GameState) {
   sdl.set_render_draw_color(renderer, 0, 0, 0, 255);
   sdl.render_clear(renderer);
 
-  render_terrain(renderer);
-
-  /*
-  // Render player
-  for _, i in entity_container.players {
-    player := &entity_container.players[i];
-    mirror_player_rendering(renderer, player);
+  // @Todo(naum): use game state state
+  switch game_state {
+    case .MainMenu :
+      fmt.println("main menu!");
+    case .Play :
+      render_terrain(game_manager);
   }
-  */
 
   sdl.render_present(renderer);
 }
 
-render_terrain :: proc(renderer: ^sdl.Renderer) {
-  for i in 0..<TERRAIN_H {
-    for j in 0..<TERRAIN_W {
-      if i != 0 && i != TERRAIN_H-1 && j != 0 && j != TERRAIN_W-1 {
-        continue;
+render_terrain :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  for chunk in terrain.chunks {
+    for i in 0..<TERRAIN_CHUNK_H {
+      for j in 0..<TERRAIN_CHUNK_W {
+        if chunk.tiles[i][j].type == TileType.None {
+          continue;
+        }
+
+        tile_pos_y := i * TILE_SIZE + chunk.pos.y * TERRAIN_CHUNK_H;
+        tile_pos_x := j * TILE_SIZE + chunk.pos.x * TERRAIN_CHUNK_W;
+
+        tile_rect := sdl.Rect {
+          i32(tile_pos_x + 1), i32(tile_pos_y + 1),
+          i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
+        };
+
+        sdl.set_render_draw_color(renderer, 100, 100, 100, 255);
+        sdl.render_fill_rect(renderer, &tile_rect);
       }
-
-      tile_pos_x := j * TILE_SIZE;
-      tile_pos_y := i * TILE_SIZE;
-
-      tile_rect := sdl.Rect {
-        i32(tile_pos_x), i32(tile_pos_y),
-        i32(TILE_SIZE), i32(TILE_SIZE)
-      };
-
-      sdl.set_render_draw_color(renderer, 100, 100, 100, 255);
-      sdl.render_fill_rect(renderer, &tile_rect);
     }
   }
 }

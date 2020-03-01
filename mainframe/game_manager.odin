@@ -11,9 +11,17 @@ FRAME_DURATION :: 1.0 / FRAMES_PER_SEC;
 CLOCK_TICK :: 0.25;
 
 // @Todo(naum): create GameStateEnum to know if the game is in menu, in-game, etc
+GameState :: enum {
+  MainMenu,
+  Play,
+}
 
 // @Todo(naum): don't use so many pointers (?)
-GameState :: struct {
+GameManager :: struct {
+  font     : ^sdl_ttf.Font,
+  window   : ^sdl.Window,
+  renderer : ^sdl.Renderer,
+
   frame_count         : u32,
 
   real_time           : f64,
@@ -26,36 +34,16 @@ GameState :: struct {
   clock_ticks : u32,
   last_game_time_clock_tick : f64,
 
-  font     : ^sdl_ttf.Font,
-  window   : ^sdl.Window,
-  renderer : ^sdl.Renderer,
+  game_state : GameState,
 
   input_manager : ^InputManager,
+
+  terrain : Terrain,
 }
 
-create_game_state :: proc() -> ^GameState {
-  game_state := new(GameState);
-  using game_state;
-
-  // -----
-  // Time / Frame
-  // -----
-
-  frame_count = 0;
-
-  real_time = _get_current_time();
-  real_frame_duration = 1;
-
-  game_time           = 0;
-  game_time_scale     = 1;
-  game_frame_duration = 1;
-
-  // -----
-  // Clock
-  // -----
-
-  clock_ticks = 0;
-  last_game_time_clock_tick = 0;
+create_game_manager :: proc() -> ^GameManager {
+  game_manager := new(GameManager);
+  using game_manager;
 
   // -----
   // Window / Renderer / Font
@@ -83,15 +71,33 @@ create_game_state :: proc() -> ^GameState {
   assert(font != nil);
   fmt.println("font loaded!");
 
+  // -----
+  // Time / Frame
+  // -----
+
+  frame_count = 0;
+
+  real_time = _get_current_time();
+  real_frame_duration = 1;
+
+  game_time           = 0;
+  game_time_scale     = 1;
+  game_frame_duration = 1;
+
+  // -----
+  // Clock
+  // -----
+
+  clock_ticks = 0;
+  last_game_time_clock_tick = 0;
+
   // -------
   // Systems
   // -------
 
-  input_manager = new_input_manager();
+  game_state = GameState.Play;
 
-  // -------
-  // /Systems
-  // -------
+  input_manager = new_input_manager();
 
   // -------
   // Startup prints
@@ -107,24 +113,22 @@ create_game_state :: proc() -> ^GameState {
   fmt.printf("render size: (%d, %d)\n", w_render, h_render);
 
   // -------
-  // /Startup prints
-  // -------
 
-  return game_state;
+  return game_manager;
 }
 
-delete_game_state :: proc(game_state: ^GameState) {
-  using game_state;
+delete_game_manager :: proc(game_manager: ^GameManager) {
+  using game_manager;
   sdl.destroy_window(window);
   sdl.destroy_renderer(renderer);
   free(input_manager);
-  free(game_state);
+  free(game_manager);
 }
 
-start_new_frame :: proc(game_state: ^GameState) {
-  using game_state;
+start_new_frame :: proc(game_manager: ^GameManager) {
+  using game_manager;
 
-  _cap_framerate(game_state);
+  _cap_framerate(game_manager);
 
   frame_count += 1;
 
@@ -139,14 +143,20 @@ start_new_frame :: proc(game_state: ^GameState) {
     clock_ticks += 1;
 
     // Call update for anything that requires clock tick
-    fmt.printf("clock tick %d\n", clock_ticks);
+    //fmt.printf("clock tick %d\n", clock_ticks);
 
     last_game_time_clock_tick += CLOCK_TICK;
   }
 }
 
-_cap_framerate :: proc(game_state: ^GameState) {
-  using game_state;
+generate_terrain :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  terrain = create_terrain();
+}
+
+_cap_framerate :: proc(game_manager: ^GameManager) {
+  using game_manager;
 
   frame_duration := _get_current_time() - real_time;
 

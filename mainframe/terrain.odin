@@ -2,48 +2,48 @@ package mainframe
 
 import sdl "shared:odin-sdl2"
 
-TERRAIN_W :: 32;
-TERRAIN_H :: 18;
+TILE_SIZE :: 32;
 
-TILE_SIZE :: VIEW_W / TERRAIN_W;
+TERRAIN_CHUNK_H :: 16;
+TERRAIN_CHUNK_W :: 16;
 
 TileType :: enum {
-  Nothing,
-  Solid,
-  Warp
+  None,
+  Ground
 }
 
-// @Note(naum): as it is right now it could be an alias, but I think we will add more stuff here
 Tile :: struct {
-  type: TileType
+  type : TileType,
+  //pos  : Vec2
+}
+
+TerrainChunk :: struct {
+  tiles : [TERRAIN_CHUNK_H][TERRAIN_CHUNK_W] Tile,
+  pos   : Vec2i, // tiles[i][j] -> (pos.x+j, pos.y+i)
 }
 
 Terrain :: struct {
-  tiles : [TERRAIN_H][TERRAIN_W]Tile,
+  chunks : [dynamic] TerrainChunk,
 }
 
-new_terrain :: proc() -> Terrain {
-  terrain : Terrain;
-  using terrain;
+create_terrain_chunk :: proc() -> TerrainChunk {
+  chunk : TerrainChunk;
+  using chunk;
 
-  for j in 0..<TERRAIN_W/2-5 {
-    tiles[0][j].type = TileType.Solid;
-    tiles[TERRAIN_H-1][j].type = TileType.Solid;
-  }
-
-  for j in TERRAIN_W/2+5..<TERRAIN_W {
-    tiles[0][j].type = TileType.Solid;
-    tiles[TERRAIN_H-1][j].type = TileType.Solid;
-  }
-
-  for i in 1..<TERRAIN_H-1 {
-    for j in 1..<TERRAIN_W-1 {
-      tiles[i][j].type = TileType.Nothing;
+  for i in 1..5 {
+    for j in 1..5 {
+      tiles[i][j].type = TileType.Ground;
     }
   }
 
+  return chunk;
+}
 
-  tiles[TERRAIN_H-2][3].type = TileType.Solid;
+create_terrain :: proc() -> Terrain {
+  terrain : Terrain;
+  using terrain;
+
+  append(&chunks, create_terrain_chunk());
 
   return terrain;
 }
@@ -71,6 +71,7 @@ tile_to_sdlrect :: proc(i, j : int) -> sdl.Rect {
   };
 }
 
+/*
 // @XXX: u8 instead of int?
 get_tile_pos :: proc(v : Vec2) -> (int, int) {
   i := int(v.y / TILE_SIZE);
@@ -81,3 +82,4 @@ get_tile_pos :: proc(v : Vec2) -> (int, int) {
 
   return i, j;
 }
+*/
