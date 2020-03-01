@@ -23,6 +23,7 @@ render :: proc(game_manager : ^GameManager) {
       fmt.println("main menu!");
     case .Play :
       render_terrain(game_manager);
+      render_player(game_manager);
   }
 
   sdl.render_present(renderer);
@@ -31,6 +32,8 @@ render :: proc(game_manager : ^GameManager) {
 render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
 
+  /*
+  // XXX(naum): in case need to do terrain streaming
   for chunk in terrain.chunks {
     for i in 0..<TERRAIN_CHUNK_H {
       for j in 0..<TERRAIN_CHUNK_W {
@@ -51,6 +54,41 @@ render_terrain :: proc(game_manager : ^GameManager) {
       }
     }
   }
+  */
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      if terrain.tiles[i][j].type == TileType.None {
+        continue;
+      }
+
+      tile_pos_y := i * TILE_SIZE;
+      tile_pos_x := j * TILE_SIZE;
+
+      tile_rect := sdl.Rect {
+        i32(tile_pos_x + 1), i32(tile_pos_y + 1),
+        i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
+      };
+
+      sdl.set_render_draw_color(renderer, 100, 100, 100, 255);
+      sdl.render_fill_rect(renderer, &tile_rect);
+    }
+  }
+}
+
+render_player :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  pos_x := player.pos.x * TILE_SIZE;
+  pos_y := player.pos.y * TILE_SIZE;
+
+  rect := sdl.Rect {
+    i32(pos_x + 2), i32(pos_y + 2),
+    i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
+  };
+
+  sdl.set_render_draw_color(renderer, 20, 40, 200, 255);
+  sdl.render_fill_rect(renderer, &rect);
 }
 
 add_fps_counter :: proc(renderer: ^sdl.Renderer, font: ^sdl_ttf.Font, frame_duration: f64, text_pos: ^sdl.Rect, h, w: ^i32) {

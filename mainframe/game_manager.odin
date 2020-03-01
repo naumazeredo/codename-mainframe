@@ -36,9 +36,10 @@ GameManager :: struct {
 
   game_state : GameState,
 
-  input_manager : ^InputManager,
+  input_manager : InputManager,
 
   terrain : Terrain,
+  player  : Player,
 }
 
 create_game_manager :: proc() -> ^GameManager {
@@ -97,7 +98,7 @@ create_game_manager :: proc() -> ^GameManager {
 
   game_state = GameState.Play;
 
-  input_manager = new_input_manager();
+  create_input_manager(&input_manager);
 
   // -------
   // Startup prints
@@ -121,7 +122,6 @@ delete_game_manager :: proc(game_manager: ^GameManager) {
   using game_manager;
   sdl.destroy_window(window);
   sdl.destroy_renderer(renderer);
-  free(input_manager);
   free(game_manager);
 }
 
@@ -152,7 +152,8 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 generate_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  terrain = create_terrain();
+  create_terrain(&terrain);
+  player.pos = terrain.enter;
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {

@@ -4,31 +4,31 @@ import sdl "shared:odin-sdl2"
 
 TILE_SIZE :: 32;
 
-TERRAIN_CHUNK_H :: 16;
-TERRAIN_CHUNK_W :: 16;
+TERRAIN_H :: 256;
+TERRAIN_W :: 256;
 
 TileType :: enum {
   None,
-  Ground
+  Ground,
 }
 
 Tile :: struct {
   type : TileType,
-  //pos  : Vec2
-}
-
-TerrainChunk :: struct {
-  tiles : [TERRAIN_CHUNK_H][TERRAIN_CHUNK_W] Tile,
-  pos   : Vec2i, // tiles[i][j] -> (pos.x+j, pos.y+i)
 }
 
 Terrain :: struct {
-  chunks : [dynamic] TerrainChunk,
+  tiles : [TERRAIN_H][TERRAIN_W] Tile,
+  enter : Vec2i,
 }
 
-create_terrain_chunk :: proc() -> TerrainChunk {
-  chunk : TerrainChunk;
-  using chunk;
+create_terrain :: proc(terrain: ^Terrain) {
+  using terrain;
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      tiles[i][j].type = TileType.None;
+    }
+  }
 
   for i in 1..5 {
     for j in 1..5 {
@@ -36,16 +36,15 @@ create_terrain_chunk :: proc() -> TerrainChunk {
     }
   }
 
-  return chunk;
+  enter = Vec2i{ 3, 3 };
 }
 
-create_terrain :: proc() -> Terrain {
-  terrain : Terrain;
-  using terrain;
+is_tile_walkable :: proc(i, j : int, terrain: ^Terrain) -> bool {
+  if i < 0 || i >= TERRAIN_H || j < 0 || j >= TERRAIN_W {
+    return false;
+  }
 
-  append(&chunks, create_terrain_chunk());
-
-  return terrain;
+  return terrain.tiles[i][j].type != TileType.None;
 }
 
 // @XXX
@@ -83,3 +82,45 @@ get_tile_pos :: proc(v : Vec2) -> (int, int) {
   return i, j;
 }
 */
+
+/*
+TERRAIN_CHUNK_H :: 256;
+TERRAIN_CHUNK_W :: 256;
+
+// @XXX(naum): in case it's needed to do terrain streaming
+Tile :: struct {
+  type : TileType,
+}
+
+TerrainChunk :: struct {
+  tiles : [TERRAIN_CHUNK_H][TERRAIN_CHUNK_W] Tile,
+  pos   : Vec2i, // tiles[i][j] -> (pos.x+j, pos.y+i)
+}
+
+Terrain :: struct {
+  chunks : [dynamic] TerrainChunk,
+}
+
+create_terrain_chunk :: proc() -> TerrainChunk {
+  chunk : TerrainChunk;
+  using chunk;
+
+  for i in 1..5 {
+    for j in 1..5 {
+      tiles[i][j].type = TileType.Ground;
+    }
+  }
+
+  return chunk;
+}
+
+create_terrain :: proc() -> Terrain {
+  terrain : Terrain;
+  using terrain;
+
+  append(&chunks, create_terrain_chunk());
+
+  return terrain;
+}
+*/
+
