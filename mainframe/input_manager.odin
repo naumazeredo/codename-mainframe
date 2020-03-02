@@ -15,6 +15,9 @@ InputManager :: struct {
   has_acted_on_tick : bool,
   can_act_on_tick   : bool,
 
+  is_player_action_next_tick : bool,
+  is_player_action_tick      : bool,
+
   keystate : ^u8,
 }
 
@@ -27,7 +30,11 @@ create_input_manager :: proc(input_manager: ^InputManager) {
   player_down   = sdl.Scancode.S;
   player_script = sdl.Scancode.Space;
 
-  has_acted_on_tick = false;
+  has_acted_on_tick  = false; // @Todo(naum): add player_ or something that tells it's player related
+  can_act_on_tick    = false; // @Todo(naum): change to some name more suggestive (related to the time frame of action)
+
+  is_player_action_next_tick = false;
+  is_player_action_tick      = false;
 
   keystate = sdl.get_keyboard_state(nil);
 }
@@ -53,7 +60,10 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
 
       if game_state == GameState.Play {
         // Player movement
-        if input_manager.can_act_on_tick && !input_manager.has_acted_on_tick {
+        if input_manager.can_act_on_tick &&
+           !input_manager.has_acted_on_tick &&
+           input_manager.is_player_action_tick {
+
           handle_player_input(e, game_manager);
         }
 
@@ -80,21 +90,10 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) {
 
   delta_pos := Vec2i { 0, 0 };
 
-  if e.key.keysym.scancode == input_manager.player_left {
-    delta_pos.x -= 1;
-  }
-
-  if e.key.keysym.scancode == input_manager.player_right {
-    delta_pos.x += 1;
-  }
-
-  if e.key.keysym.scancode == input_manager.player_up {
-    delta_pos.y -= 1;
-  }
-
-  if e.key.keysym.scancode == input_manager.player_down {
-    delta_pos.y += 1;
-  }
+  if e.key.keysym.scancode == input_manager.player_left  { delta_pos.x -= 1; }
+  if e.key.keysym.scancode == input_manager.player_right { delta_pos.x += 1; }
+  if e.key.keysym.scancode == input_manager.player_up    { delta_pos.y -= 1; }
+  if e.key.keysym.scancode == input_manager.player_down  { delta_pos.y += 1; }
 
   if move_player(delta_pos, game_manager) {
     input_manager.has_acted_on_tick = true;

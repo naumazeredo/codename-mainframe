@@ -99,6 +99,8 @@ render :: proc(game_manager : ^GameManager) {
       render_terrain(game_manager);
       render_player(game_manager);
       render_clock_debugger(game_manager);
+
+      render_temp(game_manager);
   }
 
   sdl.render_present(render_manager.renderer);
@@ -187,14 +189,44 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
   sdl.render_fill_rect(render_manager.renderer, &foreground_rect);
 
   if input_manager.can_act_on_tick {
-    action_rect := sdl.Rect {
-      i32(clock_debugger.pivot.x + 4 + CLOCK_DEBUGGER_WIDTH), i32(clock_debugger.pivot.y + 2),
+    rect := sdl.Rect {
+      i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + 2), i32(clock_debugger.pivot.y + 2),
       i32(TILE_SIZE-4), i32(TILE_SIZE-4)
     };
 
+    if input_manager.has_acted_on_tick {
+      sdl.set_render_draw_color(render_manager.renderer, 255, 20, 20, 255);
+    } else {
+      sdl.set_render_draw_color(render_manager.renderer, 20, 255, 20, 255);
+    }
 
-    sdl.set_render_draw_color(render_manager.renderer, 20, 255, 20, 255);
-    sdl.render_fill_rect(render_manager.renderer, &action_rect);
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
+}
+
+render_temp :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  if input_manager.is_player_action_next_tick {
+    rect := sdl.Rect {
+      i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + TILE_SIZE + 2), i32(clock_debugger.pivot.y + 2),
+      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+    };
+
+    sdl.set_render_draw_color(render_manager.renderer, 128, 128, 128, 255);
+
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
+
+  if input_manager.is_player_action_tick {
+    rect := sdl.Rect {
+      i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + 2 * TILE_SIZE + 2), i32(clock_debugger.pivot.y + 2),
+      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+    };
+
+    sdl.set_render_draw_color(render_manager.renderer, 255, 255, 255, 255);
+
+    sdl.render_fill_rect(render_manager.renderer, &rect);
   }
 }
 

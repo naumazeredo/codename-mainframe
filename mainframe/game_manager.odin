@@ -75,6 +75,12 @@ create_game_manager :: proc() -> ^GameManager {
   create_input_manager(&input_manager);
   create_render_manager(&render_manager);
 
+  // ------
+  // Player
+  // ------
+
+  create_player(&player);
+
   return game_manager;
 }
 
@@ -110,6 +116,7 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 
     // Call update for anything that requires clock tick
     //fmt.printf("clock tick %d\n", clock_ticks);
+    update_player_clock_tick(game_manager);
 
     last_game_time_clock_tick += CLOCK_TICK;
   }
@@ -118,6 +125,10 @@ start_new_frame :: proc(game_manager: ^GameManager) {
      game_time - last_game_time_clock_tick < CLOCK_TICK - ACTION_THRESHOLD {
 
     input_manager.has_acted_on_tick = false;
+
+    // Update if it's player action tick this tick
+    // Must be done here, after the overtime, to avoid acting on the overtime of previous tick
+    input_manager.is_player_action_tick = input_manager.is_player_action_next_tick;
   }
 }
 
