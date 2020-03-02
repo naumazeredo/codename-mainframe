@@ -9,6 +9,7 @@ FRAMES_PER_SEC :: 60;
 FRAME_DURATION :: 1.0 / FRAMES_PER_SEC;
 
 CLOCK_TICK :: 0.25;
+ACTION_THRESHOLD :: 0.07; // actions will hold within the margin of (tick + dt) and (tick - dt) and this is the dt
 
 // @Todo(naum): create GameStateEnum to know if the game is in menu, in-game, etc
 GameState :: enum {
@@ -40,6 +41,8 @@ GameManager :: struct {
 
   terrain : Terrain,
   player  : Player,
+
+  clock_debugger : ClockDebugger
 }
 
 create_game_manager :: proc() -> ^GameManager {
@@ -129,6 +132,7 @@ start_new_frame :: proc(game_manager: ^GameManager) {
   using game_manager;
 
   _cap_framerate(game_manager);
+  clock_debugger.fill_percentage = f32((game_time - last_game_time_clock_tick) / CLOCK_TICK);
 
   frame_count += 1;
 
@@ -139,8 +143,16 @@ start_new_frame :: proc(game_manager: ^GameManager) {
   game_time += game_frame_duration;
 
   // @Todo(naum): only do this in gameplay
+
+  input_manager.can_act_on_frame =  game_time - last_game_time_clock_tick <= ACTION_THRESHOLD ||
+                                    game_time - last_game_time_clock_tick >= CLOCK_TICK - ACTION_THRESHOLD;
+
   for game_time - last_game_time_clock_tick >= CLOCK_TICK {
     clock_ticks += 1;
+
+    input_manager.has_acted_on_frame = false;
+
+    clock_debugger.fill_percentage = 0;
 
     // Call update for anything that requires clock tick
     //fmt.printf("clock tick %d\n", clock_ticks);
@@ -154,6 +166,7 @@ generate_terrain :: proc(game_manager: ^GameManager) {
 
   create_terrain(&terrain);
   player.pos = terrain.enter;
+  clock_debugger.pivot = terrain.debugger_top;
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {

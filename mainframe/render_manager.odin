@@ -24,6 +24,7 @@ render :: proc(game_manager : ^GameManager) {
     case .Play :
       render_terrain(game_manager);
       render_player(game_manager);
+      render_clock_debugger(game_manager);
   }
 
   sdl.render_present(renderer);
@@ -89,6 +90,38 @@ render_player :: proc(game_manager : ^GameManager) {
 
   sdl.set_render_draw_color(renderer, 20, 40, 200, 255);
   sdl.render_fill_rect(renderer, &rect);
+}
+
+render_clock_debugger :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  foreground_width := i32((CLOCK_DEBUGGER_WIDTH)*f32(clock_debugger.fill_percentage));
+
+  foreground_rect := sdl.Rect {
+    i32(clock_debugger.pivot.x + 2), i32(clock_debugger.pivot.y + 2),
+    foreground_width, i32(TILE_SIZE-4)
+  };
+
+  background_rect := sdl.Rect {
+    i32(clock_debugger.pivot.x + 2), i32(clock_debugger.pivot.y + 2),
+    i32(CLOCK_DEBUGGER_WIDTH - 4), i32(TILE_SIZE - 4)
+  };
+
+  sdl.set_render_draw_color(renderer, 20, 255, 255, 255);
+  sdl.render_fill_rect(renderer, &background_rect);
+  sdl.set_render_draw_color(renderer, 20, 40, 200, 126);
+  sdl.render_fill_rect(renderer, &foreground_rect);
+
+  if input_manager.can_act_on_frame {
+    action_rect := sdl.Rect {
+      i32(clock_debugger.pivot.x + 4 + CLOCK_DEBUGGER_WIDTH), i32(clock_debugger.pivot.y + 2),
+      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+    };
+
+
+    sdl.set_render_draw_color(renderer, 20, 255, 20, 255);
+    sdl.render_fill_rect(renderer, &action_rect);
+  }
 }
 
 add_fps_counter :: proc(renderer: ^sdl.Renderer, font: ^sdl_ttf.Font, frame_duration: f64, text_pos: ^sdl.Rect, h, w: ^i32) {

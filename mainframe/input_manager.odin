@@ -12,6 +12,9 @@ InputManager :: struct {
   player_down   : sdl.Scancode,
   player_script : sdl.Scancode,
 
+  has_acted_on_frame : bool,
+  can_act_on_frame : bool,
+
   keystate : ^u8,
 }
 
@@ -23,6 +26,8 @@ create_input_manager :: proc(input_manager: ^InputManager) {
   player_up     = sdl.Scancode.W;
   player_down   = sdl.Scancode.S;
   player_script = sdl.Scancode.Space;
+
+  has_acted_on_frame = false;
 
   keystate = sdl.get_keyboard_state(nil);
 }
@@ -41,10 +46,17 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
 
     // @Todo(naum): remove this, only for testing
     if e.type == sdl.Event_Type.Key_Down {
+      if !input_manager.can_act_on_frame{
+        return true;
+      }
+
+      input_manager.has_acted_on_frame = true;
+
       if e.key.keysym.sym == sdl.SDLK_ESCAPE {
         // @Todo(naum): change game state
         return false;
       }
+
 
       /*
       if e.key.keysym.sym == i32(sdl.SDLK_UP) {

@@ -19,6 +19,7 @@ Tile :: struct {
 Terrain :: struct {
   tiles : [TERRAIN_H][TERRAIN_W] Tile,
   enter : Vec2i,
+  debugger_top: Vec2i
 }
 
 create_terrain :: proc(terrain: ^Terrain) {
@@ -37,6 +38,7 @@ create_terrain :: proc(terrain: ^Terrain) {
   }
 
   enter = Vec2i{ 3, 3 };
+  debugger_top = Vec2i{ 0, 0 };
 }
 
 is_tile_walkable :: proc(i, j : int, terrain: ^Terrain) -> bool {
