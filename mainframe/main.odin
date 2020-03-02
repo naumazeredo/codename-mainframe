@@ -17,7 +17,7 @@ main :: proc() {
   assert(sdl_ttf.init() != -1);
 
   game_manager := create_game_manager();
-  defer delete_game_manager(game_manager);
+  defer destroy_game_manager(game_manager);
 
   // -----------
   // Test Region

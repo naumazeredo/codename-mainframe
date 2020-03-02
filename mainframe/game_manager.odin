@@ -8,7 +8,7 @@ import sdl_ttf "shared:odin-sdl2/ttf"
 FRAMES_PER_SEC :: 60;
 FRAME_DURATION :: 1.0 / FRAMES_PER_SEC;
 
-CLOCK_TICK :: 1;
+CLOCK_TICK :: 0.5;
 ACTION_THRESHOLD :: 0.2; // actions will hold within the margin of (tick + dt) and (tick - dt) and this is the dt
 
 // @Todo(naum): create GameStateEnum to know if the game is in menu, in-game, etc
@@ -84,7 +84,7 @@ create_game_manager :: proc() -> ^GameManager {
   return game_manager;
 }
 
-delete_game_manager :: proc(game_manager: ^GameManager) {
+destroy_game_manager :: proc(game_manager: ^GameManager) {
   using game_manager;
   destroy_render_manager(&render_manager);
   free(game_manager);
@@ -157,4 +157,43 @@ _cap_framerate :: proc(game_manager: ^GameManager) {
 // @Todo(naum): move to util.odin (?)
 _get_current_time :: proc() -> f64 {
   return f64(sdl.get_performance_counter()) / f64(sdl.get_performance_frequency());
+}
+
+// @DeleteMe(naum): temporary test function
+temp_reset_game_manager :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  // -----
+  // Time / Frame
+  // -----
+
+  frame_count = 0;
+
+  real_time = _get_current_time();
+  real_frame_duration = 1;
+
+  game_time           = 0;
+  game_time_scale     = 1;
+  game_frame_duration = 1;
+
+  // -----
+  // Clock
+  // -----
+
+  clock_ticks = 0;
+  last_game_time_clock_tick = 0;
+
+  // -------
+  // Systems
+  // -------
+
+  game_state = GameState.Play;
+
+  // ------
+  // Player
+  // ------
+
+  create_player(&player);
+
+  generate_terrain(game_manager);
 }

@@ -10,6 +10,7 @@ TERRAIN_W :: 256;
 TileType :: enum {
   None,
   Ground,
+  File,
 }
 
 Tile :: struct {
@@ -19,7 +20,7 @@ Tile :: struct {
 Terrain :: struct {
   tiles : [TERRAIN_H][TERRAIN_W] Tile,
   enter : Vec2i,
-  debugger_top: Vec2i
+  debugger_top: Vec2i // @Incorrect(naum): isn't this HUD? Not a terrain related thing.
 }
 
 create_terrain :: proc(terrain: ^Terrain) {
@@ -37,6 +38,10 @@ create_terrain :: proc(terrain: ^Terrain) {
     }
   }
 
+  tiles[1][1].type = TileType.File;
+  tiles[1][3].type = TileType.File;
+  tiles[3][1].type = TileType.File;
+
   enter = Vec2i{ 3, 3 };
   debugger_top = Vec2i{ 0, 0 };
 }
@@ -48,6 +53,15 @@ is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
   }
 
   return terrain.tiles[pos.y][pos.x].type != TileType.None;
+}
+
+is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
+  if pos.y < 0 || pos.y >= TERRAIN_H ||
+     pos.x < 0 || pos.x >= TERRAIN_W {
+    return false;
+  }
+
+  return terrain.tiles[pos.y][pos.x].type == TileType.File;
 }
 
 // @XXX

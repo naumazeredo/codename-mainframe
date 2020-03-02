@@ -99,6 +99,7 @@ render :: proc(game_manager : ^GameManager) {
       render_terrain(game_manager);
       render_player(game_manager);
       render_clock_debugger(game_manager);
+      render_inventory(game_manager);
 
       render_temp(game_manager);
   }
@@ -133,6 +134,9 @@ render_terrain :: proc(game_manager : ^GameManager) {
   }
   */
 
+  GROUND_COLOR :: [4]u8{100, 100, 100, 255};
+  FILE_COLOR   :: [4]u8{80, 200, 60, 255};
+
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
       if terrain.tiles[i][j].type == TileType.None {
@@ -147,7 +151,18 @@ render_terrain :: proc(game_manager : ^GameManager) {
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
       };
 
-      sdl.set_render_draw_color(render_manager.renderer, 100, 100, 100, 255);
+      if terrain.tiles[i][j].type == TileType.Ground {
+        sdl.set_render_draw_color(
+          render_manager.renderer,
+          GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a
+        );
+      } else {
+        sdl.set_render_draw_color(
+          render_manager.renderer,
+          FILE_COLOR.r, FILE_COLOR.g, FILE_COLOR.b, FILE_COLOR.a
+        );
+      }
+
       sdl.render_fill_rect(render_manager.renderer, &tile_rect);
     }
   }
@@ -201,6 +216,37 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
     }
 
     sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
+}
+
+render_inventory :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  pos_x := 0;
+  pos_y := VIEW_H - TILE_SIZE;
+
+  for i in 0..<player.inventory_count {
+    rect := sdl.Rect {
+      i32(pos_x+2), i32(pos_y+2),
+      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+    };
+
+    sdl.set_render_draw_color(render_manager.renderer, 196, 196, 196, 255);
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+
+    pos_x += TILE_SIZE;
+  }
+
+  for i in player.inventory_count..<player.inventory_total {
+    rect := sdl.Rect {
+      i32(pos_x+2), i32(pos_y+2),
+      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+    };
+
+    sdl.set_render_draw_color(render_manager.renderer, 64, 64, 64, 255);
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+
+    pos_x += TILE_SIZE;
   }
 }
 
