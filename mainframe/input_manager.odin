@@ -54,33 +54,7 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
       if game_state == GameState.Play {
         // Player movement
         if input_manager.can_act_on_tick && !input_manager.has_acted_on_tick {
-          if e.key.keysym.scancode == input_manager.player_left {
-            if is_tile_walkable(player.pos.y, player.pos.x - 1, &terrain) {
-              player.pos.x -= 1;
-              input_manager.has_acted_on_tick = true;
-            }
-          }
-
-          if e.key.keysym.scancode == input_manager.player_right {
-            if is_tile_walkable(player.pos.y, player.pos.x + 1, &terrain) {
-              player.pos.x += 1;
-              input_manager.has_acted_on_tick = true;
-            }
-          }
-
-          if e.key.keysym.scancode == input_manager.player_up {
-            if is_tile_walkable(player.pos.y - 1, player.pos.x, &terrain) {
-              player.pos.y -= 1;
-              input_manager.has_acted_on_tick = true;
-            }
-          }
-
-          if e.key.keysym.scancode == input_manager.player_down {
-            if is_tile_walkable(player.pos.y + 1, player.pos.x, &terrain) {
-              player.pos.y += 1;
-              input_manager.has_acted_on_tick = true;
-            }
-          }
+          handle_player_input(e, game_manager);
         }
 
         /*
@@ -99,6 +73,32 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
   }
 
   return true;
+}
+
+handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) {
+  using game_manager;
+
+  delta_pos := Vec2i { 0, 0 };
+
+  if e.key.keysym.scancode == input_manager.player_left {
+    delta_pos.x -= 1;
+  }
+
+  if e.key.keysym.scancode == input_manager.player_right {
+    delta_pos.x += 1;
+  }
+
+  if e.key.keysym.scancode == input_manager.player_up {
+    delta_pos.y -= 1;
+  }
+
+  if e.key.keysym.scancode == input_manager.player_down {
+    delta_pos.y += 1;
+  }
+
+  if move_player(delta_pos, game_manager) {
+    input_manager.has_acted_on_tick = true;
+  }
 }
 
 _is_key_pressed :: proc(keystate: ^u8, code: sdl.Scancode) -> bool {

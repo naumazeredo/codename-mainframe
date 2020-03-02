@@ -41,12 +41,13 @@ create_terrain :: proc(terrain: ^Terrain) {
   debugger_top = Vec2i{ 0, 0 };
 }
 
-is_tile_walkable :: proc(i, j : int, terrain: ^Terrain) -> bool {
-  if i < 0 || i >= TERRAIN_H || j < 0 || j >= TERRAIN_W {
+is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
+  if pos.y < 0 || pos.y >= TERRAIN_H ||
+     pos.x < 0 || pos.x >= TERRAIN_W {
     return false;
   }
 
-  return terrain.tiles[i][j].type != TileType.None;
+  return terrain.tiles[pos.y][pos.x].type != TileType.None;
 }
 
 // @XXX

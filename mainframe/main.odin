@@ -32,6 +32,7 @@ main :: proc() {
   for {
     start_new_frame(game_manager);
 
+    // @Todo(naum): (don't return?) use a GameManager field instead of returning?
     running := handle_input(game_manager);
     if !running {
       break;

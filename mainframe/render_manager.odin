@@ -137,8 +137,8 @@ render_terrain :: proc(game_manager : ^GameManager) {
         continue;
       }
 
-      tile_pos_y := i * TILE_SIZE;
-      tile_pos_x := j * TILE_SIZE;
+      tile_pos_y := i * TILE_SIZE - render_manager.camera_pos.y;
+      tile_pos_x := j * TILE_SIZE - render_manager.camera_pos.x;
 
       tile_rect := sdl.Rect {
         i32(tile_pos_x + 1), i32(tile_pos_y + 1),
@@ -154,8 +154,8 @@ render_terrain :: proc(game_manager : ^GameManager) {
 render_player :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  pos_x := player.pos.x * TILE_SIZE;
-  pos_y := player.pos.y * TILE_SIZE;
+  pos_y := player.pos.y * TILE_SIZE - render_manager.camera_pos.y;
+  pos_x := player.pos.x * TILE_SIZE - render_manager.camera_pos.x;
 
   rect := sdl.Rect {
     i32(pos_x + 2), i32(pos_y + 2),
