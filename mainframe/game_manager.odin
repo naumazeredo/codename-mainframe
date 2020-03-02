@@ -111,6 +111,7 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 
   for game_time - last_game_time_clock_tick >= CLOCK_TICK {
     clock_ticks += 1;
+    last_game_time_clock_tick += CLOCK_TICK;
 
     clock_debugger.fill_percentage = 0;
 
@@ -118,7 +119,6 @@ start_new_frame :: proc(game_manager: ^GameManager) {
     //fmt.printf("clock tick %d\n", clock_ticks);
     update_player_clock_tick(game_manager);
 
-    last_game_time_clock_tick += CLOCK_TICK;
   }
 
   if game_time - last_game_time_clock_tick > ACTION_THRESHOLD &&
