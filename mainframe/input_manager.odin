@@ -12,8 +12,8 @@ InputManager :: struct {
   player_down   : sdl.Scancode,
   player_script : sdl.Scancode,
 
-  has_acted_on_frame : bool,
-  can_act_on_frame : bool,
+  has_acted_on_tick : bool,
+  can_act_on_tick   : bool,
 
   keystate : ^u8,
 }
@@ -27,7 +27,7 @@ create_input_manager :: proc(input_manager: ^InputManager) {
   player_down   = sdl.Scancode.S;
   player_script = sdl.Scancode.Space;
 
-  has_acted_on_frame = false;
+  has_acted_on_tick = false;
 
   keystate = sdl.get_keyboard_state(nil);
 }
@@ -46,52 +46,54 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
 
     // @Todo(naum): remove this, only for testing
     if e.type == sdl.Event_Type.Key_Down {
-      if !input_manager.can_act_on_frame{
-        return true;
-      }
-
-      input_manager.has_acted_on_frame = true;
-
       if e.key.keysym.sym == sdl.SDLK_ESCAPE {
         // @Todo(naum): change game state
         return false;
       }
 
+      if game_state == GameState.Play {
+        // Player movement
+        if input_manager.can_act_on_tick && !input_manager.has_acted_on_tick {
+          if e.key.keysym.scancode == input_manager.player_left {
+            if is_tile_walkable(player.pos.y, player.pos.x - 1, &terrain) {
+              player.pos.x -= 1;
+              input_manager.has_acted_on_tick = true;
+            }
+          }
 
-      /*
-      if e.key.keysym.sym == i32(sdl.SDLK_UP) {
-        game_manager.game_time_scale += 0.01;
-        fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
-      }
+          if e.key.keysym.scancode == input_manager.player_right {
+            if is_tile_walkable(player.pos.y, player.pos.x + 1, &terrain) {
+              player.pos.x += 1;
+              input_manager.has_acted_on_tick = true;
+            }
+          }
 
-      if e.key.keysym.sym == i32(sdl.SDLK_DOWN) {
-        game_manager.game_time_scale -= 0.01;
-        fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
-      }
-      */
+          if e.key.keysym.scancode == input_manager.player_up {
+            if is_tile_walkable(player.pos.y - 1, player.pos.x, &terrain) {
+              player.pos.y -= 1;
+              input_manager.has_acted_on_tick = true;
+            }
+          }
 
-      if e.key.keysym.scancode == input_manager.player_left {
-        if is_tile_walkable(player.pos.y, player.pos.x - 1, &terrain) {
-          player.pos.x -= 1;
+          if e.key.keysym.scancode == input_manager.player_down {
+            if is_tile_walkable(player.pos.y + 1, player.pos.x, &terrain) {
+              player.pos.y += 1;
+              input_manager.has_acted_on_tick = true;
+            }
+          }
         }
-      }
 
-      if e.key.keysym.scancode == input_manager.player_right {
-        if is_tile_walkable(player.pos.y, player.pos.x + 1, &terrain) {
-          player.pos.x += 1;
+        /*
+        if e.key.keysym.sym == i32(sdl.SDLK_UP) {
+          game_manager.game_time_scale += 0.01;
+          fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
         }
-      }
 
-      if e.key.keysym.scancode == input_manager.player_up {
-        if is_tile_walkable(player.pos.y - 1, player.pos.x, &terrain) {
-          player.pos.y -= 1;
+        if e.key.keysym.sym == i32(sdl.SDLK_DOWN) {
+          game_manager.game_time_scale -= 0.01;
+          fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
         }
-      }
-
-      if e.key.keysym.scancode == input_manager.player_down {
-        if is_tile_walkable(player.pos.y + 1, player.pos.x, &terrain) {
-          player.pos.y += 1;
-        }
+        */
       }
     }
   }

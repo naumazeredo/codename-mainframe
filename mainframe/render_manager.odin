@@ -112,7 +112,7 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
   sdl.set_render_draw_color(renderer, 20, 40, 200, 126);
   sdl.render_fill_rect(renderer, &foreground_rect);
 
-  if input_manager.can_act_on_frame {
+  if input_manager.can_act_on_tick {
     action_rect := sdl.Rect {
       i32(clock_debugger.pivot.x + 4 + CLOCK_DEBUGGER_WIDTH), i32(clock_debugger.pivot.y + 2),
       i32(TILE_SIZE-4), i32(TILE_SIZE-4)

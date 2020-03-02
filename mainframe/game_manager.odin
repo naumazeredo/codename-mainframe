@@ -8,8 +8,8 @@ import sdl_ttf "shared:odin-sdl2/ttf"
 FRAMES_PER_SEC :: 60;
 FRAME_DURATION :: 1.0 / FRAMES_PER_SEC;
 
-CLOCK_TICK :: 0.25;
-ACTION_THRESHOLD :: 0.07; // actions will hold within the margin of (tick + dt) and (tick - dt) and this is the dt
+CLOCK_TICK :: 1;
+ACTION_THRESHOLD :: 0.2; // actions will hold within the margin of (tick + dt) and (tick - dt) and this is the dt
 
 // @Todo(naum): create GameStateEnum to know if the game is in menu, in-game, etc
 GameState :: enum {
@@ -144,13 +144,11 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 
   // @Todo(naum): only do this in gameplay
 
-  input_manager.can_act_on_frame =  game_time - last_game_time_clock_tick <= ACTION_THRESHOLD ||
-                                    game_time - last_game_time_clock_tick >= CLOCK_TICK - ACTION_THRESHOLD;
+  input_manager.can_act_on_tick = game_time - last_game_time_clock_tick <= ACTION_THRESHOLD ||
+                                  game_time - last_game_time_clock_tick >= CLOCK_TICK - ACTION_THRESHOLD;
 
   for game_time - last_game_time_clock_tick >= CLOCK_TICK {
     clock_ticks += 1;
-
-    input_manager.has_acted_on_frame = false;
 
     clock_debugger.fill_percentage = 0;
 
@@ -158,6 +156,12 @@ start_new_frame :: proc(game_manager: ^GameManager) {
     //fmt.printf("clock tick %d\n", clock_ticks);
 
     last_game_time_clock_tick += CLOCK_TICK;
+  }
+
+  if game_time - last_game_time_clock_tick > ACTION_THRESHOLD &&
+     game_time - last_game_time_clock_tick < CLOCK_TICK - ACTION_THRESHOLD {
+
+    input_manager.has_acted_on_tick = false;
   }
 }
 
