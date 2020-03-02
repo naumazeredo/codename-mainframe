@@ -19,10 +19,6 @@ GameState :: enum {
 
 // @Todo(naum): don't use so many pointers (?)
 GameManager :: struct {
-  font     : ^sdl_ttf.Font,
-  window   : ^sdl.Window,
-  renderer : ^sdl.Renderer,
-
   frame_count         : u32,
 
   real_time           : f64,
@@ -37,7 +33,8 @@ GameManager :: struct {
 
   game_state : GameState,
 
-  input_manager : InputManager,
+  input_manager  : InputManager,
+  render_manager : RenderManager,
 
   terrain : Terrain,
   player  : Player,
@@ -48,32 +45,6 @@ GameManager :: struct {
 create_game_manager :: proc() -> ^GameManager {
   game_manager := new(GameManager);
   using game_manager;
-
-  // -----
-  // Window / Renderer / Font
-  // -----
-
-  window = sdl.create_window(
-    "Codename Rogue",
-    i32(sdl.Window_Pos.Undefined),
-    i32(sdl.Window_Pos.Undefined),
-    VIEW_W, VIEW_H,
-    sdl.Window_Flags.Allow_High_DPI
-  );
-  assert(window != nil);
-  fmt.println("window created!");
-
-  renderer = sdl.create_renderer(
-    window,
-    -1,
-    sdl.Renderer_Flags(0)
-  );
-  assert(renderer != nil);
-  fmt.println("renderer created!");
-
-  font = sdl_ttf.open_font("arial.ttf", 40);
-  assert(font != nil);
-  fmt.println("font loaded!");
 
   // -----
   // Time / Frame
@@ -102,29 +73,14 @@ create_game_manager :: proc() -> ^GameManager {
   game_state = GameState.Play;
 
   create_input_manager(&input_manager);
-
-  // -------
-  // Startup prints
-  // -------
-
-  w, h : i32;
-  sdl.get_window_size(window, &w, &h);
-
-  w_render, h_render : i32;
-  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
-
-  fmt.printf("screen size: (%d, %d)\n", w, h);
-  fmt.printf("render size: (%d, %d)\n", w_render, h_render);
-
-  // -------
+  create_render_manager(&render_manager);
 
   return game_manager;
 }
 
 delete_game_manager :: proc(game_manager: ^GameManager) {
   using game_manager;
-  sdl.destroy_window(window);
-  sdl.destroy_renderer(renderer);
+  destroy_render_manager(&render_manager);
   free(game_manager);
 }
 

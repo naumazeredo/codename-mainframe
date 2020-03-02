@@ -6,16 +6,90 @@ import "core:fmt"
 import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
 
+RenderManager :: struct {
+  font     : ^sdl_ttf.Font,
+  window   : ^sdl.Window,
+  renderer : ^sdl.Renderer,
+
+  camera_pos : Vec2i,
+  //update_camera_pos : bool,
+}
+
+create_render_manager :: proc(render_manager: ^RenderManager) {
+  using render_manager;
+
+  // -----
+  // Window / Renderer / Font
+  // -----
+
+  window = sdl.create_window(
+    "Codename Rogue",
+    i32(sdl.Window_Pos.Undefined),
+    i32(sdl.Window_Pos.Undefined),
+    VIEW_W, VIEW_H,
+    sdl.Window_Flags.Allow_High_DPI
+  );
+  assert(window != nil);
+  fmt.println("window created!");
+
+  renderer = sdl.create_renderer(
+    window,
+    -1,
+    sdl.Renderer_Flags(0)
+  );
+  assert(renderer != nil);
+  fmt.println("renderer created!");
+
+  font = sdl_ttf.open_font("arial.ttf", 40);
+  assert(font != nil);
+  fmt.println("font loaded!");
+
+  // -----
+  //
+  // -----
+
+  camera_pos = Vec2i { 0, 0 };
+
+  // -------
+  // Startup prints
+  // -------
+
+  w, h : i32;
+  sdl.get_window_size(render_manager.window, &w, &h);
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(render_manager.renderer, &w_render, &h_render);
+
+  fmt.printf("screen size: (%d, %d)\n", w, h);
+  fmt.printf("render size: (%d, %d)\n", w_render, h_render);
+}
+
+destroy_render_manager :: proc(render_manager: ^RenderManager) {
+  using render_manager;
+  sdl.destroy_window(window);
+  sdl.destroy_renderer(renderer);
+}
+
 // @Note(naum): remember Mac issue with screen size vs render size
 render :: proc(game_manager : ^GameManager) {
   using game_manager;
 
+  // Update render information
+  // @XXX(naum): use update_camera_pos?
+  //if render_manager.update_camera_pos {
+    render_manager.camera_pos = Vec2i {
+      player.pos.x * TILE_SIZE + TILE_SIZE/2 - VIEW_W/2,
+      player.pos.y * TILE_SIZE + TILE_SIZE/2 - VIEW_H/2
+    };
+    //render_manager.update_camera_pos = false;
+  //}
+
   viewport_rect : sdl.Rect;
 
   // Clear viewport
-  sdl.render_set_viewport(renderer, nil);
-  sdl.set_render_draw_color(renderer, 0, 0, 0, 255);
-  sdl.render_clear(renderer);
+  sdl.render_set_viewport(render_manager.renderer, nil);
+  sdl.set_render_draw_color(render_manager.renderer, 0, 0, 0, 255);
+  sdl.render_clear(render_manager.renderer);
 
   // @Todo(naum): use game state state
   switch game_state {
@@ -27,7 +101,7 @@ render :: proc(game_manager : ^GameManager) {
       render_clock_debugger(game_manager);
   }
 
-  sdl.render_present(renderer);
+  sdl.render_present(render_manager.renderer);
 }
 
 render_terrain :: proc(game_manager : ^GameManager) {
@@ -71,8 +145,8 @@ render_terrain :: proc(game_manager : ^GameManager) {
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
       };
 
-      sdl.set_render_draw_color(renderer, 100, 100, 100, 255);
-      sdl.render_fill_rect(renderer, &tile_rect);
+      sdl.set_render_draw_color(render_manager.renderer, 100, 100, 100, 255);
+      sdl.render_fill_rect(render_manager.renderer, &tile_rect);
     }
   }
 }
@@ -88,8 +162,8 @@ render_player :: proc(game_manager : ^GameManager) {
     i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
   };
 
-  sdl.set_render_draw_color(renderer, 20, 40, 200, 255);
-  sdl.render_fill_rect(renderer, &rect);
+  sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 255);
+  sdl.render_fill_rect(render_manager.renderer, &rect);
 }
 
 render_clock_debugger :: proc(game_manager : ^GameManager) {
@@ -107,10 +181,10 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
     i32(CLOCK_DEBUGGER_WIDTH - 4), i32(TILE_SIZE - 4)
   };
 
-  sdl.set_render_draw_color(renderer, 20, 255, 255, 255);
-  sdl.render_fill_rect(renderer, &background_rect);
-  sdl.set_render_draw_color(renderer, 20, 40, 200, 126);
-  sdl.render_fill_rect(renderer, &foreground_rect);
+  sdl.set_render_draw_color(render_manager.renderer, 20, 255, 255, 255);
+  sdl.render_fill_rect(render_manager.renderer, &background_rect);
+  sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 126);
+  sdl.render_fill_rect(render_manager.renderer, &foreground_rect);
 
   if input_manager.can_act_on_tick {
     action_rect := sdl.Rect {
@@ -119,8 +193,8 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
     };
 
 
-    sdl.set_render_draw_color(renderer, 20, 255, 20, 255);
-    sdl.render_fill_rect(renderer, &action_rect);
+    sdl.set_render_draw_color(render_manager.renderer, 20, 255, 20, 255);
+    sdl.render_fill_rect(render_manager.renderer, &action_rect);
   }
 }
 
