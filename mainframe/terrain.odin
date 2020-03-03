@@ -34,11 +34,10 @@ create_terrain :: proc(terrain: ^Terrain) {
     }
   }
 
-  for i in 1..5 {
-    for j in 1..5 {
-      tiles[i][j].type = TileType.Ground;
-    }
-  }
+  example_room := Recti{1,1,5,5};
+  create_room(terrain, example_room);
+
+  generate_rooms(terrain);
 
   tiles[1][1].type = TileType.File;
   tiles[1][3].type = TileType.File;
