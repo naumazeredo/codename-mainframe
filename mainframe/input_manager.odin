@@ -20,7 +20,7 @@ InputManager :: struct {
 }
 
 PlayerActions :: enum {
-  None, Move, Script, Pick
+  None, Move, UseScript, PickFile
 }
 
 PlayerActionCache :: struct {
@@ -112,7 +112,11 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
     input_manager.player_action_cache.move_direction = delta_pos;
   }
 
-  //if _is_scancode_pressed(e, input_manager.player_pick)  { return pick_file(game_manager); }
+  if _is_scancode_pressed(e, input_manager.player_pick) &&
+     can_pick_file(game_manager) {
+
+    input_manager.player_action_cache.action = PlayerActions.PickFile;
+  }
 
   return false;
 }

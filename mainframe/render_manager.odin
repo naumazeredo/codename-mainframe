@@ -6,6 +6,20 @@ import "core:fmt"
 import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
 
+CPU_COUNT_WIDTH     :: 8;
+CPU_COUNT_HEIGHT    :: 10;
+CPU_COUNT_SPACING   :: 2;
+CPU_COUNT_OFFSET_Y  :: -5;
+CPU_FILLED_COLOUR   :: Color {200, 200, 255, 255};
+CPU_UNFILLED_COLOUR :: Color {64, 64, 64, 255};
+CPU_CAN_ACT_COLOUR  :: Color {100, 255, 100, 255};
+
+INVENTORY_SPACING :: 4;
+INVENTORY_POS_X :: INVENTORY_SPACING;
+INVENTORY_POS_Y :: VIEW_H - INVENTORY_FILE_HEIGHT - INVENTORY_SPACING;
+INVENTORY_FILE_WIDTH  :: 28;
+INVENTORY_FILE_HEIGHT :: 40;
+
 RenderManager :: struct {
   font     : ^sdl_ttf.Font,
   window   : ^sdl.Window,
@@ -101,11 +115,12 @@ render :: proc(game_manager : ^GameManager) {
     case .Play :
       render_terrain(game_manager);
       render_player(game_manager);
-      render_player_next_action(game_manager);
 
       // HUD
       render_clock_debugger(game_manager);
       render_inventory(game_manager);
+
+      render_player_next_action(game_manager);
   }
 
   sdl.render_present(render_manager.renderer);
@@ -192,14 +207,9 @@ render_player :: proc(game_manager : ^GameManager) {
   );
 }
 
-// UI stuff
-CPU_COUNT_WIDTH :: 8;
-CPU_COUNT_HEIGHT :: 10;
-CPU_COUNT_SPACING :: 2;
-CPU_COUNT_OFFSET_Y :: -5;
-CPU_FILLED_COLOUR   :: Color {200, 200, 255, 255};
-CPU_UNFILLED_COLOUR :: Color {64, 64, 64, 255};
-CPU_CAN_ACT_COLOUR  :: Color {100, 255, 100, 255};
+// -----
+//  HUD
+// -----
 
 render_cpu_count:: proc(game_manager: ^GameManager, pivot : Vec2i, cpu_count, cpu_total: u8) {
   using game_manager;
@@ -259,23 +269,42 @@ render_cpu_count:: proc(game_manager: ^GameManager, pivot : Vec2i, cpu_count, cp
 render_player_next_action :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  if input_manager.player_action_cache.action == PlayerActions.Move {
-    pos := TILE_SIZE * player.pos - render_manager.camera_pos;
-    pos += input_manager.player_action_cache.move_direction * TILE_SIZE;
+  switch input_manager.player_action_cache.action {
+    case .None :
+      // do nothing
 
-    rect := sdl.Rect {
-      i32(pos.x + 4), i32(pos.y + 4),
-      i32(TILE_SIZE - 8), i32(TILE_SIZE - 8)
-    };
+    case .Move :
+      pos := TILE_SIZE * player.pos - render_manager.camera_pos;
+      pos += input_manager.player_action_cache.move_direction * TILE_SIZE;
 
-    sdl.set_render_draw_color(render_manager.renderer, 255, 255, 255, 128);
-    sdl.render_fill_rect(render_manager.renderer, &rect);
+      rect := sdl.Rect {
+        i32(pos.x + 4), i32(pos.y + 4),
+        i32(TILE_SIZE - 8), i32(TILE_SIZE - 8)
+      };
+
+      sdl.set_render_draw_color(render_manager.renderer, 255, 255, 255, 128);
+      sdl.render_fill_rect(render_manager.renderer, &rect);
+
+    case .UseScript:
+      // @Todo(naum): HUD for script use
+
+    case .PickFile:
+      count := int(player.inventory_count);
+
+      pos := Vec2i {
+        INVENTORY_POS_X + count * (INVENTORY_FILE_WIDTH + INVENTORY_SPACING),
+        INVENTORY_POS_Y
+      };
+
+      rect := sdl.Rect {
+        i32(pos.x), i32(pos.y),
+        i32(INVENTORY_FILE_WIDTH), i32(INVENTORY_FILE_HEIGHT)
+      };
+
+      sdl.set_render_draw_color(render_manager.renderer, 100, 255, 100, 255);
+      sdl.render_fill_rect(render_manager.renderer, &rect);
   }
 }
-
-// --------
-// UI stuff
-// --------
 
 render_clock_debugger :: proc(game_manager : ^GameManager) {
   using game_manager;
@@ -301,31 +330,30 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
 render_inventory :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  pos_x := 0;
-  pos_y := VIEW_H - TILE_SIZE;
+  pos := Vec2i { INVENTORY_POS_X, INVENTORY_POS_Y };
 
   for i in 0..<player.inventory_count {
     rect := sdl.Rect {
-      i32(pos_x+2), i32(pos_y+2),
-      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+      i32(pos.x), i32(pos.y),
+      i32(INVENTORY_FILE_WIDTH), i32(INVENTORY_FILE_HEIGHT)
     };
 
     sdl.set_render_draw_color(render_manager.renderer, 196, 196, 196, 255);
     sdl.render_fill_rect(render_manager.renderer, &rect);
 
-    pos_x += TILE_SIZE;
+    pos.x += INVENTORY_FILE_WIDTH + INVENTORY_SPACING;
   }
 
   for i in player.inventory_count..<player.inventory_total {
     rect := sdl.Rect {
-      i32(pos_x+2), i32(pos_y+2),
-      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
+      i32(pos.x), i32(pos.y),
+      i32(INVENTORY_FILE_WIDTH), i32(INVENTORY_FILE_HEIGHT)
     };
 
     sdl.set_render_draw_color(render_manager.renderer, 64, 64, 64, 255);
     sdl.render_fill_rect(render_manager.renderer, &rect);
 
-    pos_x += TILE_SIZE;
+    pos.x += INVENTORY_FILE_WIDTH + INVENTORY_SPACING;
   }
 }
 

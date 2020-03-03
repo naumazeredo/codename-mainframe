@@ -36,10 +36,10 @@ update_player_clock_tick :: proc(game_manager: ^GameManager) {
           input_manager.player_action_cache.move_direction,
           game_manager
         );
-      case .Script :
+      case .UseScript :
         //
-      case .Pick :
-        //
+      case .PickFile :
+        pick_file(game_manager);
     }
 
     input_manager.player_action_cache.action = PlayerActions.None;
@@ -74,17 +74,18 @@ move_player :: proc(delta_pos: Vec2i, game_manager: ^GameManager) {
   player.pos = new_pos;
 }
 
-pick_file :: proc(game_manager: ^GameManager) -> bool {
+can_pick_file :: proc(game_manager: ^GameManager) -> bool {
   using game_manager;
 
-  if player.inventory_count != player.inventory_total &&
-     is_tile_file(player.pos, &terrain) {
+  return player.inventory_count != player.inventory_total &&
+         is_tile_file(player.pos, &terrain);
+}
 
-    terrain.tiles[player.pos.y][player.pos.x].type = TileType.Ground;
-    player.inventory_count += 1;
+pick_file :: proc(game_manager: ^GameManager) {
+  using game_manager;
 
-    return true;
-  }
+  assert(can_pick_file(game_manager));
 
-  return false;
+  terrain.tiles[player.pos.y][player.pos.x].type = TileType.Ground;
+  player.inventory_count += 1;
 }
