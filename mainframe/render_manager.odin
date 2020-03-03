@@ -197,9 +197,9 @@ CPU_COUNT_WIDTH :: 8;
 CPU_COUNT_HEIGHT :: 10;
 CPU_COUNT_SPACING :: 2;
 CPU_COUNT_OFFSET_Y :: -5;
-CPU_FILLED_COLOUR :: Color {200, 200, 255, 255};
-CPU_UNFILLED_COLOUR:: Color {64, 64, 64, 255};
-CPU_LAST_COLOUR:: Color {255, 255, 255, 255};
+CPU_FILLED_COLOUR   :: Color {200, 200, 255, 255};
+CPU_UNFILLED_COLOUR :: Color {64, 64, 64, 255};
+CPU_CAN_ACT_COLOUR  :: Color {100, 255, 100, 255};
 
 render_cpu_count:: proc(game_manager: ^GameManager, pivot : Vec2i, cpu_count, cpu_total: u8) {
   using game_manager;
@@ -209,39 +209,51 @@ render_cpu_count:: proc(game_manager: ^GameManager, pivot : Vec2i, cpu_count, cp
   pos_x := i32(pivot.x - total_width / 2);
   pos_y := i32(pivot.y + CPU_COUNT_OFFSET_Y - CPU_COUNT_HEIGHT);
 
-  sdl.set_render_draw_color(render_manager.renderer, CPU_FILLED_COLOUR.r, CPU_FILLED_COLOUR.g, CPU_FILLED_COLOUR.b, CPU_FILLED_COLOUR.a);
+  if cpu_count == cpu_total-1 {
 
-  for i in 0..<cpu_count{
-    rect := sdl.Rect {
-      pos_x, pos_y,
-      i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
-    };
+    sdl.set_render_draw_color(render_manager.renderer,
+      CPU_CAN_ACT_COLOUR.r, CPU_CAN_ACT_COLOUR.g, CPU_CAN_ACT_COLOUR.b, CPU_CAN_ACT_COLOUR.a
+    );
 
-    sdl.render_fill_rect(render_manager.renderer, &rect);
+    for i in 0..<cpu_total {
+      rect := sdl.Rect {
+        pos_x, pos_y,
+        i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
+      };
 
-    pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
+      sdl.render_fill_rect(render_manager.renderer, &rect);
+
+      pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
+    }
+
+  } else {
+
+    sdl.set_render_draw_color(render_manager.renderer, CPU_FILLED_COLOUR.r, CPU_FILLED_COLOUR.g, CPU_FILLED_COLOUR.b, CPU_FILLED_COLOUR.a);
+
+    for i in 0..cpu_count{
+      rect := sdl.Rect {
+        pos_x, pos_y,
+        i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
+      };
+
+      sdl.render_fill_rect(render_manager.renderer, &rect);
+
+      pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
+    }
+
+    sdl.set_render_draw_color(render_manager.renderer, CPU_UNFILLED_COLOUR.r, CPU_UNFILLED_COLOUR.g, CPU_UNFILLED_COLOUR.b, CPU_UNFILLED_COLOUR.a);
+
+    for i in cpu_count+1..<cpu_total{
+      rect := sdl.Rect {
+        pos_x, pos_y,
+        i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
+      };
+
+      sdl.render_fill_rect(render_manager.renderer, &rect);
+
+      pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
+    }
   }
-
-  sdl.set_render_draw_color(render_manager.renderer, CPU_UNFILLED_COLOUR.r, CPU_UNFILLED_COLOUR.g, CPU_UNFILLED_COLOUR.b, CPU_UNFILLED_COLOUR.a);
-
-  for i in cpu_count..<cpu_total-1{
-    rect := sdl.Rect {
-      pos_x, pos_y,
-      i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
-    };
-
-    sdl.render_fill_rect(render_manager.renderer, &rect);
-
-    pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
-  }
-
-  rect := sdl.Rect {
-    pos_x, pos_y,
-    i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
-  };
-
-  sdl.set_render_draw_color(render_manager.renderer, CPU_LAST_COLOUR.r, CPU_LAST_COLOUR.g, CPU_LAST_COLOUR.b, CPU_LAST_COLOUR.a);
-  sdl.render_fill_rect(render_manager.renderer, &rect);
 }
 
 render_player_next_action :: proc(game_manager : ^GameManager) {
@@ -284,22 +296,6 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
   sdl.render_fill_rect(render_manager.renderer, &background_rect);
   sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 126);
   sdl.render_fill_rect(render_manager.renderer, &foreground_rect);
-
-  if input_manager.is_player_action_tick {
-    rect := sdl.Rect {
-      i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + 2), i32(clock_debugger.pivot.y + 2),
-      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
-    };
-
-    draw_color := Color { 255, 255, 255, 255 };
-
-    if input_manager.player_action_cache.action != PlayerActions.None {
-      draw_color = Color { 0, 255, 0, 255 };
-    }
-
-    sdl.set_render_draw_color(render_manager.renderer, draw_color.r, draw_color.g, draw_color.b, draw_color.a);
-    sdl.render_fill_rect(render_manager.renderer, &rect);
-  }
 }
 
 render_inventory :: proc(game_manager: ^GameManager) {
