@@ -13,13 +13,19 @@ InputManager :: struct {
   player_script : sdl.Scancode,
   player_pick   : sdl.Scancode,
 
-  has_acted_on_tick : bool,
-  can_act_on_tick   : bool,
-
-  is_player_action_next_tick : bool,
-  is_player_action_tick      : bool,
+  player_action_cache   : PlayerActionCache,
+  is_player_action_tick : bool,
 
   keystate : ^u8,
+}
+
+PlayerActions :: enum {
+  None, Move, Script, Pick
+}
+
+PlayerActionCache :: struct {
+  action : PlayerActions,
+  move_direction : Vec2i,
 }
 
 create_input_manager :: proc(input_manager: ^InputManager) {
@@ -32,11 +38,8 @@ create_input_manager :: proc(input_manager: ^InputManager) {
   player_script = sdl.Scancode.Space;
   player_pick   = sdl.Scancode.E;
 
-  has_acted_on_tick = false; // @Todo(naum): add player_ or something that tells it's player related
-  can_act_on_tick   = false; // @Todo(naum): change to some name more suggestive (related to the time frame of action)
-
-  is_player_action_next_tick = false;
-  is_player_action_tick      = false;
+  player_action_cache.action = PlayerActions.None;
+  is_player_action_tick = false;
 
   keystate = sdl.get_keyboard_state(nil);
 }
@@ -66,14 +69,8 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
 
       if game_state == GameState.Play {
         // Player movement
-        if input_manager.can_act_on_tick &&
-           !input_manager.has_acted_on_tick &&
-           input_manager.is_player_action_tick {
-
-          // @XXX(naum): maybe just has_acted_on_tick = handle_player_input(..)?
-          if handle_player_input(e, game_manager) {
-            input_manager.has_acted_on_tick = true;
-          }
+        if input_manager.is_player_action_tick {
+          handle_player_input(e, game_manager);
         }
 
         // ----
@@ -105,12 +102,17 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
 
   delta_pos := Vec2i { 0, 0 };
 
-  if _is_scancode_pressed(e, input_manager.player_left)  { return move_player({ -1,  0 }, game_manager); }
-  if _is_scancode_pressed(e, input_manager.player_right) { return move_player({ +1,  0 }, game_manager); }
-  if _is_scancode_pressed(e, input_manager.player_up)    { return move_player({  0, -1 }, game_manager); }
-  if _is_scancode_pressed(e, input_manager.player_down)  { return move_player({  0, +1 }, game_manager); }
+  /**/ if _is_scancode_pressed(e, input_manager.player_left)  { delta_pos = { -1,  0 }; }
+  else if _is_scancode_pressed(e, input_manager.player_right) { delta_pos = {  1,  0 }; }
+  else if _is_scancode_pressed(e, input_manager.player_up)    { delta_pos = {  0, -1 }; }
+  else if _is_scancode_pressed(e, input_manager.player_down)  { delta_pos = {  0,  1 }; }
 
-  if _is_scancode_pressed(e, input_manager.player_pick)  { return pick_file(game_manager); }
+  if delta_pos != {0, 0} && can_move_player(delta_pos, game_manager) {
+    input_manager.player_action_cache.action = PlayerActions.Move;
+    input_manager.player_action_cache.move_direction = delta_pos;
+  }
+
+  //if _is_scancode_pressed(e, input_manager.player_pick)  { return pick_file(game_manager); }
 
   return false;
 }

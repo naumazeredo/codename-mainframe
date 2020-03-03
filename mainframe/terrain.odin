@@ -1,5 +1,7 @@
 package mainframe
 
+import "core:fmt"
+
 import sdl "shared:odin-sdl2"
 
 TILE_SIZE :: 32;
@@ -86,58 +88,3 @@ tile_to_sdlrect :: proc(i, j : int) -> sdl.Rect {
     TILE_SIZE
   };
 }
-
-/*
-// @XXX: u8 instead of int?
-get_tile_pos :: proc(v : Vec2) -> (int, int) {
-  i := int(v.y / TILE_SIZE);
-  j := int(v.x / TILE_SIZE);
-
-  i = min(TERRAIN_H-1, max(0, i));
-  j = min(TERRAIN_W-1, max(0, j));
-
-  return i, j;
-}
-*/
-
-/*
-TERRAIN_CHUNK_H :: 256;
-TERRAIN_CHUNK_W :: 256;
-
-// @XXX(naum): in case it's needed to do terrain streaming
-Tile :: struct {
-  type : TileType,
-}
-
-TerrainChunk :: struct {
-  tiles : [TERRAIN_CHUNK_H][TERRAIN_CHUNK_W] Tile,
-  pos   : Vec2i, // tiles[i][j] -> (pos.x+j, pos.y+i)
-}
-
-Terrain :: struct {
-  chunks : [dynamic] TerrainChunk,
-}
-
-create_terrain_chunk :: proc() -> TerrainChunk {
-  chunk : TerrainChunk;
-  using chunk;
-
-  for i in 1..5 {
-    for j in 1..5 {
-      tiles[i][j].type = TileType.Ground;
-    }
-  }
-
-  return chunk;
-}
-
-create_terrain :: proc() -> Terrain {
-  terrain : Terrain;
-  using terrain;
-
-  append(&chunks, create_terrain_chunk());
-
-  return terrain;
-}
-*/
-

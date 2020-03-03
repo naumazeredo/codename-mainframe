@@ -9,7 +9,6 @@ FRAMES_PER_SEC :: 60;
 FRAME_DURATION :: 1.0 / FRAMES_PER_SEC;
 
 CLOCK_TICK :: 0.5;
-ACTION_THRESHOLD :: 0.2; // actions will hold within the margin of (tick + dt) and (tick - dt) and this is the dt
 
 // @Todo(naum): create GameStateEnum to know if the game is in menu, in-game, etc
 GameState :: enum {
@@ -104,31 +103,20 @@ start_new_frame :: proc(game_manager: ^GameManager) {
   game_frame_duration = game_time_scale * real_frame_duration;
   game_time += game_frame_duration;
 
-  // @Todo(naum): only do this in gameplay
+  // Game play logic
+  if game_state == GameState.Play {
 
-  input_manager.can_act_on_tick = game_time - last_game_time_clock_tick <= ACTION_THRESHOLD ||
-                                  game_time - last_game_time_clock_tick >= CLOCK_TICK - ACTION_THRESHOLD;
+    for game_time - last_game_time_clock_tick >= CLOCK_TICK {
+      clock_ticks += 1;
+      last_game_time_clock_tick += CLOCK_TICK;
 
-  for game_time - last_game_time_clock_tick >= CLOCK_TICK {
-    clock_ticks += 1;
-    last_game_time_clock_tick += CLOCK_TICK;
+      clock_debugger.fill_percentage = 0;
 
-    clock_debugger.fill_percentage = 0;
+      // Call update for anything that requires clock tick
+      //fmt.printf("clock tick %d\n", clock_ticks);
+      update_player_clock_tick(game_manager);
 
-    // Call update for anything that requires clock tick
-    //fmt.printf("clock tick %d\n", clock_ticks);
-    update_player_clock_tick(game_manager);
-
-  }
-
-  if game_time - last_game_time_clock_tick > ACTION_THRESHOLD &&
-     game_time - last_game_time_clock_tick < CLOCK_TICK - ACTION_THRESHOLD {
-
-    input_manager.has_acted_on_tick = false;
-
-    // Update if it's player action tick this tick
-    // Must be done here, after the overtime, to avoid acting on the overtime of previous tick
-    input_manager.is_player_action_tick = input_manager.is_player_action_next_tick;
+    }
   }
 }
 

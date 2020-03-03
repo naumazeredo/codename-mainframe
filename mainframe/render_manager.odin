@@ -40,6 +40,9 @@ create_render_manager :: proc(render_manager: ^RenderManager) {
   assert(renderer != nil);
   fmt.println("renderer created!");
 
+  // @DeleteMe(naum): remove this when we have proper graphics
+  sdl.set_render_draw_blend_mode(renderer, sdl.Blend_Mode.Blend);
+
   font = sdl_ttf.open_font("arial.ttf", 40);
   assert(font != nil);
   fmt.println("font loaded!");
@@ -98,10 +101,11 @@ render :: proc(game_manager : ^GameManager) {
     case .Play :
       render_terrain(game_manager);
       render_player(game_manager);
+      render_player_next_action(game_manager);
+
+      // HUD
       render_clock_debugger(game_manager);
       render_inventory(game_manager);
-
-      render_temp(game_manager);
   }
 
   sdl.render_present(render_manager.renderer);
@@ -134,8 +138,8 @@ render_terrain :: proc(game_manager : ^GameManager) {
   }
   */
 
-  GROUND_COLOR :: [4]u8{100, 100, 100, 255};
-  FILE_COLOR   :: [4]u8{80, 200, 60, 255};
+  GROUND_COLOR :: Color {100, 100, 100, 255};
+  FILE_COLOR   :: Color {80, 200, 60, 255};
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
@@ -143,11 +147,10 @@ render_terrain :: proc(game_manager : ^GameManager) {
         continue;
       }
 
-      tile_pos_y := i * TILE_SIZE - render_manager.camera_pos.y;
-      tile_pos_x := j * TILE_SIZE - render_manager.camera_pos.x;
+      tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
 
       tile_rect := sdl.Rect {
-        i32(tile_pos_x + 1), i32(tile_pos_y + 1),
+        i32(tile_pos.x + 1), i32(tile_pos.y + 1),
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
       };
 
@@ -171,75 +174,97 @@ render_terrain :: proc(game_manager : ^GameManager) {
 render_player :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  pos_y := player.pos.y * TILE_SIZE - render_manager.camera_pos.y;
-  pos_x := player.pos.x * TILE_SIZE - render_manager.camera_pos.x;
-
-  player_canvas_pos := Vec2i{pos_x, pos_y};
+  player_pos := TILE_SIZE * player.pos - render_manager.camera_pos;
 
   rect := sdl.Rect {
-    i32(player_canvas_pos.x + 2), i32(player_canvas_pos.y + 2),
+    i32(player_pos.x + 2), i32(player_pos.y + 2),
     i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
   };
 
   sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 255);
   sdl.render_fill_rect(render_manager.renderer, &rect);
 
-  render_cpu_count(game_manager, player_canvas_pos, player.cpu_count, player.cpu_total);
+  // @Todo(naum): render in center
+  render_cpu_count(
+    game_manager,
+    { player_pos.x + TILE_SIZE/2, player_pos.y },
+    player.cpu_count, player.cpu_total
+  );
 }
 
 // UI stuff
-CPU_COUNT_WIDTH :: 5;
-CPU_COUNT_HEIGHT :: 7;
+CPU_COUNT_WIDTH :: 8;
+CPU_COUNT_HEIGHT :: 10;
 CPU_COUNT_SPACING :: 2;
 CPU_COUNT_OFFSET_Y :: -5;
-CPU_FILLED_COLOUR :: [4]u8{200, 10, 200, 255};
-CPU_UNFILLED_COLOUR:: [4]u8{10, 10, 10, 255};
-CPU_LAST_COLOUR:: [4]u8{200, 30, 20, 255};
+CPU_FILLED_COLOUR :: Color {200, 200, 255, 255};
+CPU_UNFILLED_COLOUR:: Color {64, 64, 64, 255};
+CPU_LAST_COLOUR:: Color {255, 255, 255, 255};
 
-render_cpu_count:: proc(game_manager: ^GameManager, pivot: Vec2i, cpu_count, cpu_total: u8) {
+render_cpu_count:: proc(game_manager: ^GameManager, pivot : Vec2i, cpu_count, cpu_total: u8) {
   using game_manager;
 
-  pos_x, pos_y : i32;
-  pos_y = i32(pivot.y + CPU_COUNT_OFFSET_Y - CPU_COUNT_HEIGHT);
+  total_width := int(cpu_total) * CPU_COUNT_WIDTH + (int(cpu_total)-1) * CPU_COUNT_SPACING;
+
+  pos_x := i32(pivot.x - total_width / 2);
+  pos_y := i32(pivot.y + CPU_COUNT_OFFSET_Y - CPU_COUNT_HEIGHT);
 
   sdl.set_render_draw_color(render_manager.renderer, CPU_FILLED_COLOUR.r, CPU_FILLED_COLOUR.g, CPU_FILLED_COLOUR.b, CPU_FILLED_COLOUR.a);
-  for i in 0..<cpu_count{
-    pos_x = i32(pivot.x) + i32(i)*i32(CPU_COUNT_WIDTH);
 
+  for i in 0..<cpu_count{
     rect := sdl.Rect {
       pos_x, pos_y,
-      i32(CPU_COUNT_WIDTH - CPU_COUNT_SPACING), i32(CPU_COUNT_HEIGHT)
+      i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
     };
 
     sdl.render_fill_rect(render_manager.renderer, &rect);
+
+    pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
   }
-  fmt.println(cpu_count,cpu_total);
 
   sdl.set_render_draw_color(render_manager.renderer, CPU_UNFILLED_COLOUR.r, CPU_UNFILLED_COLOUR.g, CPU_UNFILLED_COLOUR.b, CPU_UNFILLED_COLOUR.a);
-  offset := i32(cpu_count) * i32(CPU_COUNT_WIDTH);
-  for i in cpu_count..<cpu_total-1{
-    pos_x = offset + i32(pivot.x) + i32(i)*i32(CPU_COUNT_WIDTH);
 
+  for i in cpu_count..<cpu_total-1{
     rect := sdl.Rect {
       pos_x, pos_y,
-      i32(CPU_COUNT_WIDTH - CPU_COUNT_SPACING), i32(CPU_COUNT_HEIGHT)
+      i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
     };
 
     sdl.render_fill_rect(render_manager.renderer, &rect);
+
+    pos_x += CPU_COUNT_WIDTH + CPU_COUNT_SPACING;
   }
 
-  offset = i32(cpu_total-1) * i32(CPU_COUNT_WIDTH);
-  pos_x = offset + i32(pivot.x);
   rect := sdl.Rect {
     pos_x, pos_y,
-    i32(CPU_COUNT_WIDTH - CPU_COUNT_SPACING), i32(CPU_COUNT_HEIGHT)
+    i32(CPU_COUNT_WIDTH), i32(CPU_COUNT_HEIGHT)
   };
 
   sdl.set_render_draw_color(render_manager.renderer, CPU_LAST_COLOUR.r, CPU_LAST_COLOUR.g, CPU_LAST_COLOUR.b, CPU_LAST_COLOUR.a);
   sdl.render_fill_rect(render_manager.renderer, &rect);
 }
 
+render_player_next_action :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  if input_manager.player_action_cache.action == PlayerActions.Move {
+    pos := TILE_SIZE * player.pos - render_manager.camera_pos;
+    pos += input_manager.player_action_cache.move_direction * TILE_SIZE;
+
+    rect := sdl.Rect {
+      i32(pos.x + 4), i32(pos.y + 4),
+      i32(TILE_SIZE - 8), i32(TILE_SIZE - 8)
+    };
+
+    sdl.set_render_draw_color(render_manager.renderer, 255, 255, 255, 128);
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
+}
+
+// --------
 // UI stuff
+// --------
+
 render_clock_debugger :: proc(game_manager : ^GameManager) {
   using game_manager;
 
@@ -260,18 +285,19 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
   sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 126);
   sdl.render_fill_rect(render_manager.renderer, &foreground_rect);
 
-  if input_manager.can_act_on_tick {
+  if input_manager.is_player_action_tick {
     rect := sdl.Rect {
       i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + 2), i32(clock_debugger.pivot.y + 2),
       i32(TILE_SIZE-4), i32(TILE_SIZE-4)
     };
 
-    if input_manager.has_acted_on_tick {
-      sdl.set_render_draw_color(render_manager.renderer, 255, 20, 20, 255);
-    } else {
-      sdl.set_render_draw_color(render_manager.renderer, 20, 255, 20, 255);
+    draw_color := Color { 255, 255, 255, 255 };
+
+    if input_manager.player_action_cache.action != PlayerActions.None {
+      draw_color = Color { 0, 255, 0, 255 };
     }
 
+    sdl.set_render_draw_color(render_manager.renderer, draw_color.r, draw_color.g, draw_color.b, draw_color.a);
     sdl.render_fill_rect(render_manager.renderer, &rect);
   }
 }
@@ -304,32 +330,6 @@ render_inventory :: proc(game_manager: ^GameManager) {
     sdl.render_fill_rect(render_manager.renderer, &rect);
 
     pos_x += TILE_SIZE;
-  }
-}
-
-render_temp :: proc(game_manager : ^GameManager) {
-  using game_manager;
-
-  if input_manager.is_player_action_next_tick {
-    rect := sdl.Rect {
-      i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + TILE_SIZE + 2), i32(clock_debugger.pivot.y + 2),
-      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
-    };
-
-    sdl.set_render_draw_color(render_manager.renderer, 128, 128, 128, 255);
-
-    sdl.render_fill_rect(render_manager.renderer, &rect);
-  }
-
-  if input_manager.is_player_action_tick {
-    rect := sdl.Rect {
-      i32(clock_debugger.pivot.x + CLOCK_DEBUGGER_WIDTH + 2 * TILE_SIZE + 2), i32(clock_debugger.pivot.y + 2),
-      i32(TILE_SIZE-4), i32(TILE_SIZE-4)
-    };
-
-    sdl.set_render_draw_color(render_manager.renderer, 255, 255, 255, 255);
-
-    sdl.render_fill_rect(render_manager.renderer, &rect);
   }
 }
 

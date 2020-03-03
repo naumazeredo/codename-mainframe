@@ -29,10 +29,6 @@ main :: proc() {
   // /Test Region
   // -----------
 
-  // This avoids player acting on the overtime of first frame
-  // @Note(naum): move this to the proper place in case we have a menu + gameplay
-  game_manager.input_manager.has_acted_on_tick = true;
-
   for {
     start_new_frame(game_manager);
 
