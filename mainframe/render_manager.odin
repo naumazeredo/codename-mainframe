@@ -174,15 +174,72 @@ render_player :: proc(game_manager : ^GameManager) {
   pos_y := player.pos.y * TILE_SIZE - render_manager.camera_pos.y;
   pos_x := player.pos.x * TILE_SIZE - render_manager.camera_pos.x;
 
+  player_canvas_pos := Vec2i{pos_x, pos_y};
+
   rect := sdl.Rect {
-    i32(pos_x + 2), i32(pos_y + 2),
+    i32(player_canvas_pos.x + 2), i32(player_canvas_pos.y + 2),
     i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
   };
 
   sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 255);
   sdl.render_fill_rect(render_manager.renderer, &rect);
+
+  render_cpu_count(game_manager, player_canvas_pos, player.cpu_count, player.cpu_total);
 }
 
+// UI stuff
+CPU_COUNT_WIDTH :: 5;
+CPU_COUNT_HEIGHT :: 7;
+CPU_COUNT_SPACING :: 2;
+CPU_COUNT_OFFSET_Y :: -5;
+CPU_FILLED_COLOUR :: [4]u8{200, 10, 200, 255};
+CPU_UNFILLED_COLOUR:: [4]u8{10, 10, 10, 255};
+CPU_LAST_COLOUR:: [4]u8{200, 30, 20, 255};
+
+render_cpu_count:: proc(game_manager: ^GameManager, pivot: Vec2i, cpu_count, cpu_total: u8) {
+  using game_manager;
+
+  pos_x, pos_y : i32;
+  pos_y = i32(pivot.y + CPU_COUNT_OFFSET_Y - CPU_COUNT_HEIGHT);
+
+  sdl.set_render_draw_color(render_manager.renderer, CPU_FILLED_COLOUR.r, CPU_FILLED_COLOUR.g, CPU_FILLED_COLOUR.b, CPU_FILLED_COLOUR.a);
+  for i in 0..<cpu_count{
+    pos_x = i32(pivot.x) + i32(i)*i32(CPU_COUNT_WIDTH);
+
+    rect := sdl.Rect {
+      pos_x, pos_y,
+      i32(CPU_COUNT_WIDTH - CPU_COUNT_SPACING), i32(CPU_COUNT_HEIGHT)
+    };
+
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
+  fmt.println(cpu_count,cpu_total);
+
+  sdl.set_render_draw_color(render_manager.renderer, CPU_UNFILLED_COLOUR.r, CPU_UNFILLED_COLOUR.g, CPU_UNFILLED_COLOUR.b, CPU_UNFILLED_COLOUR.a);
+  offset := i32(cpu_count) * i32(CPU_COUNT_WIDTH);
+  for i in cpu_count..<cpu_total-1{
+    pos_x = offset + i32(pivot.x) + i32(i)*i32(CPU_COUNT_WIDTH);
+
+    rect := sdl.Rect {
+      pos_x, pos_y,
+      i32(CPU_COUNT_WIDTH - CPU_COUNT_SPACING), i32(CPU_COUNT_HEIGHT)
+    };
+
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
+
+  offset = i32(cpu_total-1) * i32(CPU_COUNT_WIDTH);
+  pos_x = offset + i32(pivot.x);
+  rect := sdl.Rect {
+    pos_x, pos_y,
+    i32(CPU_COUNT_WIDTH - CPU_COUNT_SPACING), i32(CPU_COUNT_HEIGHT)
+  };
+
+  sdl.set_render_draw_color(render_manager.renderer, CPU_LAST_COLOUR.r, CPU_LAST_COLOUR.g, CPU_LAST_COLOUR.b, CPU_LAST_COLOUR.a);
+  sdl.render_fill_rect(render_manager.renderer, &rect);
+}
+
+// UI stuff
 render_clock_debugger :: proc(game_manager : ^GameManager) {
   using game_manager;
 
