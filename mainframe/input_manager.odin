@@ -56,13 +56,15 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
       return false;
     }
 
-    // @Todo(naum): remove this, only for testing
     if e.type == sdl.Event_Type.Key_Down {
+      // @Todo(naum): remove this, only for testing
       if e.key.keysym.sym == sdl.SDLK_ESCAPE {
         // @Todo(naum): change game state
         return false;
       }
 
+      // @Todo(naum): remove this, only for testing
+      // @Idea(naum): maybe change to retry
       if e.key.keysym.sym == sdl.SDLK_r {
         temp_reset_game_manager(game_manager);
       }
