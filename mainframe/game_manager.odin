@@ -37,6 +37,7 @@ GameManager :: struct {
 
   terrain : Terrain,
   player  : Player,
+  enemy_container : EnemyContainer,
 
   clock_debugger : ClockDebugger
 }
@@ -112,10 +113,11 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 
       clock_debugger.fill_percentage = 0;
 
-      // Call update for anything that requires clock tick
-      //fmt.printf("clock tick %d\n", clock_ticks);
       update_player_clock_tick(game_manager);
 
+      for i in 0..<enemy_container.count {
+        update_enemy_clock_tick(i, game_manager);
+      }
     }
   }
 }
@@ -123,9 +125,8 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 generate_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  create_terrain(&terrain);
-  player.pos = terrain.enter;
-  clock_debugger.pivot = terrain.debugger_top;
+  //create_terrain(game_manager);
+  create_test_terrain(game_manager);
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {

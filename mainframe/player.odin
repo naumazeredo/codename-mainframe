@@ -13,7 +13,7 @@ Player :: struct {
 }
 
 create_player :: proc(player: ^Player) {
-  player.cpu_total = 4;
+  player.cpu_total = 3;
   player.cpu_count = 0;
 
   player.inventory_total = 3;

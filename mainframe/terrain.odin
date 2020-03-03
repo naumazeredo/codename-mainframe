@@ -22,29 +22,78 @@ Tile :: struct {
 Terrain :: struct {
   tiles : [TERRAIN_H][TERRAIN_W] Tile,
   enter : Vec2i,
-  debugger_top: Vec2i // @Incorrect(naum): isn't this HUD? Not a terrain related thing.
 }
 
-create_terrain :: proc(terrain: ^Terrain) {
-  using terrain;
+create_test_terrain :: proc(game_manager: ^GameManager) {
+  using game_manager;
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      tiles[i][j].type = TileType.None;
+      terrain.tiles[i][j].type = TileType.None;
+    }
+  }
+
+  clear_enemy_container(&enemy_container);
+
+  // 0 -> nothing
+  // 1 -> player start
+  // 2 -> ground
+  // 3 -> file
+  // 4 -> patrol AMS (left)
+  // 5 -> circle AMS (down)
+  custom_terrain := [12][12]u8 {
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 2, 2, 5, 2, 0, 0, 2, 2, 2, 0 },
+    { 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 0 },
+    { 0, 2, 2, 2, 2, 2, 0, 0, 2, 2, 2, 0 },
+    { 0, 2, 2, 2, 2, 2, 0, 0, 0, 2, 0, 0 },
+    { 0, 0, 0, 0, 2, 0, 0, 2, 2, 2, 2, 0 },
+    { 0, 0, 0, 0, 2, 2, 2, 2, 3, 2, 2, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 2, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 2, 3, 1, 2, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+  };
+
+  for row, i in custom_terrain {
+    for elem, j in row {
+      terrain.tiles[i][j].type = TileType.Ground;
+
+      switch elem {
+        case 0: // nothing
+          terrain.tiles[i][j].type = TileType.None;
+        case 1: // player
+          terrain.enter = Vec2i{ j, i };
+          player.pos = terrain.enter;
+        case 3: // file
+          terrain.tiles[i][j].type = TileType.File;
+        case 4: // enemy back and forth
+          create_enemy(EnemyType.BackAndForth, { j, i }, &enemy_container);
+        case 5: // enemy circle 3x3
+          create_enemy(EnemyType.Circle3x3, { j, i }, &enemy_container);
+      }
+    }
+  }
+
+  clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
+}
+
+create_terrain :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      terrain.tiles[i][j].type = TileType.None;
     }
   }
 
   example_room := Recti{1,1,5,5};
-  create_room(terrain, example_room);
+  create_room(&terrain, example_room);
 
-  generate_rooms(terrain);
+  generate_rooms(&terrain);
 
-  tiles[1][1].type = TileType.File;
-  tiles[1][3].type = TileType.File;
-  tiles[3][1].type = TileType.File;
-
-  enter = Vec2i{ 3, 3 };
-  debugger_top = Vec2i{ 0, 0 };
+  clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
 }
 
 is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {

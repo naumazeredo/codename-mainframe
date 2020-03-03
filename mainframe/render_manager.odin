@@ -115,12 +115,14 @@ render :: proc(game_manager : ^GameManager) {
     case .Play :
       render_terrain(game_manager);
       render_player(game_manager);
+      render_enemies(game_manager);
 
       // HUD
       render_clock_debugger(game_manager);
       render_inventory(game_manager);
 
       render_player_next_action(game_manager);
+      render_cpu_counts(game_manager);
   }
 
   sdl.render_present(render_manager.renderer);
@@ -128,30 +130,6 @@ render :: proc(game_manager : ^GameManager) {
 
 render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
-
-  /*
-  // XXX(naum): in case need to do terrain streaming
-  for chunk in terrain.chunks {
-    for i in 0..<TERRAIN_CHUNK_H {
-      for j in 0..<TERRAIN_CHUNK_W {
-        if chunk.tiles[i][j].type == TileType.None {
-          continue;
-        }
-
-        tile_pos_y := i * TILE_SIZE + chunk.pos.y * TERRAIN_CHUNK_H;
-        tile_pos_x := j * TILE_SIZE + chunk.pos.x * TERRAIN_CHUNK_W;
-
-        tile_rect := sdl.Rect {
-          i32(tile_pos_x + 1), i32(tile_pos_y + 1),
-          i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
-        };
-
-        sdl.set_render_draw_color(renderer, 100, 100, 100, 255);
-        sdl.render_fill_rect(renderer, &tile_rect);
-      }
-    }
-  }
-  */
 
   GROUND_COLOR :: Color {100, 100, 100, 255};
   FILE_COLOR   :: Color {80, 200, 60, 255};
@@ -189,29 +167,63 @@ render_terrain :: proc(game_manager : ^GameManager) {
 render_player :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  player_pos := TILE_SIZE * player.pos - render_manager.camera_pos;
+  pos := TILE_SIZE * player.pos - render_manager.camera_pos;
 
   rect := sdl.Rect {
-    i32(player_pos.x + 2), i32(player_pos.y + 2),
+    i32(pos.x + 2), i32(pos.y + 2),
     i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
   };
 
   sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 255);
   sdl.render_fill_rect(render_manager.renderer, &rect);
+}
 
-  // @Todo(naum): render in center
-  render_cpu_count(
-    game_manager,
-    { player_pos.x + TILE_SIZE/2, player_pos.y },
-    player.cpu_count, player.cpu_total
-  );
+render_enemies :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  for i in 0..<enemy_container.count {
+    pos := TILE_SIZE * enemy_container.pos[i] - render_manager.camera_pos;
+
+    rect := sdl.Rect {
+      i32(pos.x + 2), i32(pos.y + 2),
+      i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
+    };
+
+    sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
+    sdl.render_fill_rect(render_manager.renderer, &rect);
+  }
 }
 
 // -----
 //  HUD
 // -----
 
-render_cpu_count:: proc(game_manager: ^GameManager, pivot : Vec2i, cpu_count, cpu_total: u8) {
+render_cpu_counts :: proc(game_manager: ^GameManager) {
+  using game_manager;
+  pos : Vec2i;
+
+
+  // Player CPU count
+  pos = player.pos * TILE_SIZE - render_manager.camera_pos;
+  render_cpu_count(
+    player.cpu_count, player.cpu_total,
+    { pos.x + TILE_SIZE/2, pos.y },
+    game_manager
+  );
+
+  // Enemies CPU counts
+  for i in 0..<enemy_container.count {
+    pos = enemy_container.pos[i] * TILE_SIZE - render_manager.camera_pos;
+    type := int(enemy_container.type[i]);
+    render_cpu_count(
+      enemy_container.cpu_count[i], enemy_type_attributes[type].cpu_total,
+      { pos.x + TILE_SIZE/2, pos.y },
+      game_manager
+    );
+  }
+}
+
+render_cpu_count:: proc(cpu_count, cpu_total: u8, pivot : Vec2i, game_manager: ^GameManager) {
   using game_manager;
 
   total_width := int(cpu_total) * CPU_COUNT_WIDTH + (int(cpu_total)-1) * CPU_COUNT_SPACING;
