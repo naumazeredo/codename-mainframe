@@ -83,14 +83,14 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   // mock terrain generation TODO(luciano): remove
 
   id1, _ := create_room(&terrain, Recti{5, 15, 5, 5});
-  id2, _ := create_room(&terrain, Recti{11, 13, 3, 3});
-  connect_rooms(&terrain, id1, id2);
-  id3, _ := create_room(&terrain, Recti{4, 12, 2, 2});
+  id3, _ := create_room(&terrain, Recti{6, 12, 2, 2});
   id4, _ := create_room(&terrain, Recti{1, 12, 2, 2});
+  id5, _ := create_room(&terrain, Recti{15, 12, 2, 2});
+  id6, _ := create_room(&terrain, Recti{1, 17, 2, 2});
   connect_rooms(&terrain, id1, id3);
-  ok := connect_rooms(&terrain, id1, id3);
-  fmt.println(ok);
   connect_rooms(&terrain, id1, id4);
+  connect_rooms(&terrain, id1, id5);
+  connect_rooms(&terrain, id1, id6);
 }
 
 create_terrain :: proc(game_manager: ^GameManager) {

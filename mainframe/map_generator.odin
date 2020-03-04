@@ -47,6 +47,7 @@ can_rooms_coexist:: proc(a,b : Recti) -> bool {
          (a.y + a.w < b.y || b.y + b.w < a.y);
 }
 
+//TODO(luciano): if we keep developing this game, make this function smaller
 connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   using terrain;
 
@@ -61,10 +62,10 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   h1, h2 := room1.rect.h , room2.rect.h;
   w1, w2 := room1.rect.w , room2.rect.w;
 
-  left_room := x1 < x2 ? room1.rect : room2.rect ;
-  right_room := x1 < x2 ? room2.rect : room1.rect ;
-  upper_room := y1 < y2 ? room1.rect : room2.rect ;
-  lower_room := y1 < y2 ? room2.rect : room1.rect ;
+  left_room := x1 < x2 ? room1.rect : room2.rect;
+  right_room := x1 < x2 ? room2.rect : room1.rect;
+  upper_room := y1 < y2 ? room1.rect : room2.rect;
+  lower_room := y1 < y2 ? room2.rect : room1.rect;
 
   rooms_can_have_horizontal_tunnel := (upper_room.y + upper_room.h > lower_room.y);
 
@@ -99,9 +100,33 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
     return true;
   }
 
-  //TODO(luciano): add case for squared path
+  is_upper_corner_path := (rand_int32_range(0, 2) % 2)== 0;
+  tunnel_x, tunnel_y, y_lower, y_upper, x_lower, x_upper: int;
+  if is_upper_corner_path {
+    tunnel_x = rand_int32_range(lower_room.x, lower_room.x+lower_room.w);
+    x_lower = min(tunnel_x, upper_room.x);
+    x_upper = max(tunnel_x, upper_room.x);
+    tunnel_y = rand_int32_range(upper_room.y, upper_room.y+upper_room.h);
+    y_lower = tunnel_y;
+    y_upper = lower_room.y;
+  } else {
+    tunnel_x = rand_int32_range(upper_room.x, upper_room.x+upper_room.w);
+    x_lower = min(tunnel_x, lower_room.x);
+    x_upper = max(tunnel_x, lower_room.x);
+    tunnel_y = rand_int32_range(lower_room.y, lower_room.y+lower_room.h);
+    y_lower = upper_room.y+upper_room.h;
+    y_upper = tunnel_y;
+  }
 
-  return false;
+  for y in y_lower .. y_upper {
+    tiles[y][tunnel_x].type = TileType.Ground;
+  }
+
+  for x in x_lower .. x_upper {
+    tiles[tunnel_y][x].type = TileType.Ground;
+  }
+
+  return true;
 }
 
 rooms_are_already_connected :: proc(topology: ^Topology, id1, id2 : int) -> bool {
