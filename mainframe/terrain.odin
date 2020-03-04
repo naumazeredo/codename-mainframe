@@ -22,6 +22,8 @@ Tile :: struct {
 Terrain :: struct {
   tiles : [TERRAIN_H][TERRAIN_W] Tile,
   enter : Vec2i,
+
+  topology: Topology,
 }
 
 create_test_terrain :: proc(game_manager: ^GameManager) {
@@ -77,6 +79,18 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   }
 
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
+
+  // mock terrain generation TODO(luciano): remove
+
+  id1, _ := create_room(&terrain, Recti{5, 15, 5, 5});
+  id2, _ := create_room(&terrain, Recti{11, 13, 3, 3});
+  connect_rooms(&terrain, id1, id2);
+  id3, _ := create_room(&terrain, Recti{4, 12, 2, 2});
+  id4, _ := create_room(&terrain, Recti{1, 12, 2, 2});
+  connect_rooms(&terrain, id1, id3);
+  ok := connect_rooms(&terrain, id1, id3);
+  fmt.println(ok);
+  connect_rooms(&terrain, id1, id4);
 }
 
 create_terrain :: proc(game_manager: ^GameManager) {
