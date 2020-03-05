@@ -120,6 +120,8 @@ start_new_frame :: proc(game_manager: ^GameManager) {
       }
 
       check_for_player_damage(game_manager);
+
+      terrain_update_player_vision(game_manager);
     }
   }
 }

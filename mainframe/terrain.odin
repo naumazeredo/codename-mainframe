@@ -11,15 +11,18 @@ TERRAIN_W :: 256;
 
 TileType :: enum {
   None,
+  Entrance,
   Ground,
   File,
 }
 
 // @Idea(naum): Maybe test #soa
 Terrain :: struct {
-  tile_type : [TERRAIN_H][TERRAIN_W]TileType,
+  tile_type             : [TERRAIN_H][TERRAIN_W]TileType,
   is_tile_being_scanned : [TERRAIN_H][TERRAIN_W]bool,
-  enter : Vec2i,
+  is_tile_visible       : [TERRAIN_H][TERRAIN_W]bool,
+
+  enter : Vec2i, // @CleanUp(naum): remove?
 
   topology: Topology,
 }
@@ -31,6 +34,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
     for j in 0..<TERRAIN_W {
       terrain.tile_type[i][j] = .None;
       terrain.is_tile_being_scanned[i][j] = false;
+      terrain.is_tile_visible[i][j] = false;
     }
   }
 
@@ -66,9 +70,9 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
       switch elem {
         case 0: // nothing
           terrain.tile_type[i][j] = .None;
-        case 1: // player
-          terrain.enter = Vec2i{ j, i };
-          player.pos = terrain.enter;
+        case 1: // entrance
+          terrain.tile_type[i][j] = .Entrance;
+          player.pos = Vec2i { j, i };
         case 3: // file
           terrain.tile_type[i][j] = .File;
         case 4: // enemy back and forth
@@ -78,6 +82,8 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
       }
     }
   }
+
+  terrain_update_player_vision(game_manager);
 
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
 
@@ -120,7 +126,23 @@ update_terrain_clock_tick :: proc(game_manager: ^GameManager) {
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
       terrain.is_tile_being_scanned[i][j] = false;
+      terrain.is_tile_visible[i][j] = false;
     }
+  }
+}
+
+terrain_update_player_vision :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  player_vision, _ := calculate_bfs_region(player.pos,
+                                           int(player.vision_radius),
+                                           &terrain,
+                                           always_true_condition,
+                                           in_euclid_dist_condition
+                                           //less_than_euclid_dist_condition
+                                          );
+  for pos in player_vision {
+    terrain.is_tile_visible[pos.y][pos.x] = true;
   }
 }
 

@@ -85,8 +85,8 @@ create_boss_room_template :: proc(terrain : ^Terrain) {
   room_id, _ = create_room(terrain,boss_upper_room);
   connect_rooms(terrain, boss_room_id, room_id);
 
+  terrain.tile_type[boss_y][boss_x] = .Entrance;
   terrain.enter = Vec2i{boss_x, boss_y};
-
 }
 
 can_rooms_coexist:: proc(a,b : Recti) -> bool {

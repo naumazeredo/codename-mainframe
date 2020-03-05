@@ -13,6 +13,8 @@ Player :: struct {
 
   inventory_total : u8,
   inventory_count : u8,
+
+  vision_radius : u8,
 }
 
 create_player :: proc(player: ^Player) {
@@ -21,6 +23,8 @@ create_player :: proc(player: ^Player) {
 
   player.inventory_total = 3;
   player.inventory_count = 0;
+
+  player.vision_radius = 8;
 }
 
 update_player_clock_tick :: proc(game_manager: ^GameManager) {
@@ -102,7 +106,7 @@ player_take_damage :: proc(game_manager: ^GameManager) {
   for i := PLAYER_DROP_SIZE ; i < 10 ; i += 1 {
     region_pos, _ = calculate_bfs_region(
       player.pos, i, &terrain,
-      is_tile_ground_and_not_start
+      tile_ground_and_not_start_condition
     );
 
     if len(region_pos) - 1 >= int(player.inventory_count) - 1 {

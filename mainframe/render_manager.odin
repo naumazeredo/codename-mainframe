@@ -132,15 +132,14 @@ render :: proc(game_manager : ^GameManager) {
 render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  GROUND_COLOR :: Color {100, 100, 100, 255};
-  FILE_COLOR   :: Color {80, 200, 60, 255};
+  NONE_DARK_COLOR   :: Color {0, 0, 0, 0};
+  NONE_COLOR        :: Color {5, 5, 5, 255};
+  GROUND_DARK_COLOR :: Color {20, 20, 20, 255};
+  GROUND_COLOR      :: Color {100, 100, 100, 255};
+  FILE_COLOR        :: Color {80, 200, 60, 255};
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      if terrain.tile_type[i][j] == .None {
-        continue;
-      }
-
       tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
 
       tile_rect := sdl.Rect {
@@ -148,18 +147,25 @@ render_terrain :: proc(game_manager : ^GameManager) {
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
       };
 
-      if terrain.tile_type[i][j] == .Ground {
-        sdl.set_render_draw_color(
-          render_manager.renderer,
-          GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a
-        );
+      color : Color;
+
+      if terrain.is_tile_visible[i][j] {
+        #partial switch terrain.tile_type[i][j] {
+          case .None     : color = NONE_COLOR;
+          case .Ground   : color = GROUND_COLOR;
+          case .File     : color = FILE_COLOR;
+          case .Entrance : color = GROUND_COLOR;
+        }
       } else {
-        sdl.set_render_draw_color(
-          render_manager.renderer,
-          FILE_COLOR.r, FILE_COLOR.g, FILE_COLOR.b, FILE_COLOR.a
-        );
+        #partial switch terrain.tile_type[i][j] {
+          case .None     : color = NONE_DARK_COLOR;
+          case .Ground   : color = GROUND_DARK_COLOR;
+          case .File     : color = GROUND_DARK_COLOR;
+          case .Entrance : color = GROUND_DARK_COLOR;
+        }
       }
 
+      sdl.set_render_draw_color(render_manager.renderer, color.r, color.g, color.b, color.a);
       sdl.render_fill_rect(render_manager.renderer, &tile_rect);
     }
   }
@@ -172,7 +178,8 @@ render_scan :: proc(game_manager : ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      if !terrain.is_tile_being_scanned[i][j] {
+      if !terrain.is_tile_being_scanned[i][j] ||
+         !terrain.is_tile_visible[i][j] {
         continue;
       }
 
@@ -211,6 +218,9 @@ render_enemies :: proc(game_manager: ^GameManager) {
   using game_manager;
 
   for i in 0..<enemy_container.count {
+    enemy_pos := enemy_container.pos[i];
+    if !terrain.is_tile_visible[enemy_pos.y][enemy_pos.x] { continue; }
+
     pos := TILE_SIZE * enemy_container.pos[i] - render_manager.camera_pos;
 
     rect := sdl.Rect {
@@ -247,6 +257,9 @@ render_cpu_counts :: proc(game_manager: ^GameManager) {
 
   // Enemies CPU counts
   for i in 0..<enemy_container.count {
+    enemy_pos := enemy_container.pos[i];
+    if !terrain.is_tile_visible[enemy_pos.y][enemy_pos.x] { continue; }
+
     pos = enemy_container.pos[i] * TILE_SIZE - render_manager.camera_pos;
     type := int(enemy_container.type[i]);
     render_cpu_count(

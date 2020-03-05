@@ -126,23 +126,47 @@ calculate_bfs :: proc(start, end : Vec2i, terrain: ^Terrain) -> Queue(Vec2i) {
 
 _dist: [TERRAIN_H][TERRAIN_W]int;
 
-ConditionType :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool;
+ConditionType :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool;
 // @WTF(naum): Odin issue? No way to reuse ConditionType to not type the whole proc stuff everytime?
-condition_true :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool { return true; }
+always_true_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool { return true; }
 
-is_tile_walkable_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
+tile_walkable_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
   return is_tile_walkable(pos, terrain) && pos != start;
 }
 
-is_tile_ground_and_not_start :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
+tile_ground_and_not_start_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
   return terrain.tile_type[pos.y][pos.x] == .Ground && pos != start;
+}
+
+in_euclid_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
+  delta := pos - start;
+  delta_sq := delta * delta;
+  return delta_sq.x + delta_sq.y <= max_dist * max_dist;
+}
+
+less_than_euclid_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
+  delta := pos - start;
+  delta_sq := delta * delta;
+  return delta_sq.x + delta_sq.y < max_dist * max_dist;
+}
+
+dist_in_max_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
+  return dist <= max_dist;
+}
+
+square_in_max_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
+  delta := pos - start;
+  return max(abs(delta.x), abs(delta.y)) <= max_dist;
 }
 
 calculate_bfs_region :: proc(start: Vec2i,
                              max_dist: int,
                              terrain: ^Terrain,
-                             add_condition: ConditionType = is_tile_walkable_condition
+                             add_condition: ConditionType = always_true_condition,
+                             valid_condition: ConditionType = dist_in_max_dist_condition,
+                             next_condition: ConditionType = always_true_condition
                             ) -> ([]Vec2i, []int) {
+
   assert(max_dist >= 0);
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
@@ -161,18 +185,21 @@ calculate_bfs_region :: proc(start: Vec2i,
     pos := queue_pop(&q);
     dist := _dist[pos.y][pos.x];
 
-    if add_condition(start, pos, dist, terrain) {
+    if !valid_condition(start, pos, dist, max_dist, terrain) {
+      continue;
+    }
+
+    if add_condition(start, pos, dist, max_dist, terrain) {
       append(&region_pos,  pos );
       append(&region_dist, dist);
     }
 
-    if dist == max_dist {
-      continue;
-    }
 
     for delta in _deltas {
       next := pos + delta;
-      if is_pos_valid(next) && _dist[next.y][next.x] == -1 {
+      if is_pos_valid(next) && _dist[next.y][next.x] == -1 &&
+         next_condition(start, next, _dist[next.y][next.x], max_dist, terrain) {
+
         _dist[next.y][next.x] = dist + 1;
         queue_insert(&q, next);
       }

@@ -235,54 +235,60 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
   type := int(enemy_container.type[index]);
   scan_size := int(enemy_type_attributes[type].scan_size);
 
-  //scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index], scan_size, &terrain);
-  scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index], scan_size, &terrain, condition_true);
-  for pos in scan_region_pos {
-
   /*
-  for i in -scan_size..scan_size {
-    for j in -scan_size..scan_size {
-      if i == 0 && j == 0 { continue; }
+  // square
+  scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index],
+                                             scan_size,
+                                             &terrain,
+                                             always_true_condition,
+                                             square_in_max_dist_condition
+                                            );
+                                            */
 
-      pos := enemy_container.pos[index] + Vec2i { int(j), int(i) };
+  //scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index], scan_size, &terrain, is_tile_walkable_condition); // only walkable
 
-      if !is_pos_valid(pos) { continue; }
-      */
+  //scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index], scan_size, &terrain); // manhattan
 
-      terrain.is_tile_being_scanned[pos.y][pos.x] = true;
+  // euclidian
+  scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index],
+                                             scan_size,
+                                             &terrain,
+                                             always_true_condition,
+                                             in_euclid_dist_condition
+                                            );
 
-      if player.pos == pos {
-        player_found = true;
+  for pos in scan_region_pos {
+    terrain.is_tile_being_scanned[pos.y][pos.x] = true;
 
-        // @Optimize(naum): use data oriented design (add to enemies_with_successful_scan[state])
-        switch enemy_container.state[index] {
-          case .Patrol :
-            enemy_container.last_patrol_pos[index] = enemy_container.pos[index];
-            enemy_container.cpu_total[index] = enemy_type_attributes[type].cpu_total_alert;
-          fallthrough;
+    if player.pos == pos {
+      player_found = true;
 
-          case .AlertScan:
-            enemy_container.state[index] = .Alert;
-          fallthrough;
+      // @Optimize(naum): use data oriented design (add to enemies_with_successful_scan[state])
+      switch enemy_container.state[index] {
+        case .Patrol :
+          enemy_container.last_patrol_pos[index] = enemy_container.pos[index];
+          enemy_container.cpu_total[index] = enemy_type_attributes[type].cpu_total_alert;
+        fallthrough;
 
-          case .Alert :
-            enemy_container.alert_pos[index]  = player.pos;
-            enemy_container.alert_path[index] = calculate_bfs(enemy_container.pos[index],
-                                                              player.pos,
-                                                              &terrain);
+        case .AlertScan:
+          enemy_container.state[index] = .Alert;
+        fallthrough;
 
-          case .Timeout :
-          fallthrough;
+        case .Alert :
+          enemy_container.alert_pos[index]  = player.pos;
+          enemy_container.alert_path[index] = calculate_bfs(enemy_container.pos[index],
+                                                            player.pos,
+                                                            &terrain);
 
-          case .BackToPatrol :
-            fmt.println("scanning while going back to patrol should not happen!");
-            assert(false);
-        }
+        case .Timeout :
+        fallthrough;
+
+        case .BackToPatrol :
+          fmt.println("scanning while going back to patrol should not happen!");
+          assert(false);
       }
     }
-    /*
   }
-  */
 
   return player_found;
 }
