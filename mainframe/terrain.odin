@@ -138,8 +138,8 @@ terrain_update_player_vision :: proc(game_manager: ^GameManager) {
                                            int(player.vision_radius),
                                            &terrain,
                                            always_true_condition,
-                                           in_euclid_dist_condition
-                                           //less_than_euclid_dist_condition
+                                           //in_euclid_dist_condition
+                                           custom_euclid_dist_condition
                                           );
   for pos in player_vision {
     terrain.is_tile_visible[pos.y][pos.x] = true;

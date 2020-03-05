@@ -254,7 +254,8 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
                                              scan_size,
                                              &terrain,
                                              always_true_condition,
-                                             in_euclid_dist_condition
+                                             //in_euclid_dist_condition
+                                             custom_euclid_dist_condition
                                             );
 
   for pos in scan_region_pos {

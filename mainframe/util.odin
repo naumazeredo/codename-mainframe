@@ -144,10 +144,10 @@ in_euclid_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: 
   return delta_sq.x + delta_sq.y <= max_dist * max_dist;
 }
 
-less_than_euclid_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
+custom_euclid_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
   delta := pos - start;
   delta_sq := delta * delta;
-  return delta_sq.x + delta_sq.y < max_dist * max_dist;
+  return delta_sq.x + delta_sq.y < max_dist * max_dist - 1;
 }
 
 dist_in_max_dist_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, max_dist: int, terrain: ^Terrain) -> bool {
