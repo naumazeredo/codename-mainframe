@@ -125,8 +125,8 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 generate_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  //create_terrain(game_manager);
-  create_test_terrain(game_manager);
+  create_terrain(game_manager);
+  //create_test_terrain(game_manager);
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {

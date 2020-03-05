@@ -14,6 +14,8 @@ Topology :: struct {
   n_of_rooms : int,
   n_of_tunnels: int,
 
+  boss_room_id : int,
+
   tunnels : [MAX_TUNNELS][2]int,
 }
 
@@ -47,11 +49,21 @@ can_rooms_coexist:: proc(a,b : Recti) -> bool {
          (a.y + a.w < b.y || b.y + b.w < a.y);
 }
 
+can_create_room :: proc (terrain : ^Terrain, room : Recti) -> bool {
+  using terrain;
+  for i in 0..<topology.n_of_rooms {
+    if !can_rooms_coexist(topology.rooms[i].rect, room) { return false; }
+  }
+
+  return true;
+}
+
 //TODO(luciano): if we keep developing this game, make this function smaller
 connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   using terrain;
 
-  if id1 >= topology.n_of_rooms || id2 >= topology.n_of_rooms { return false; }
+  if id1 >= topology.n_of_rooms || id2 >= topology.n_of_rooms ||
+     id1 < 0 || id2 < 0 { return false; }
 
   if rooms_are_already_connected(&topology, id1,id2) { return false; }
 
@@ -143,22 +155,53 @@ _append_tunnel :: proc(topology : ^Topology, id1,id2: int) {
   topology.tunnels[topology.n_of_tunnels] = [2]int{id1,id2};
   topology.n_of_tunnels += 1;
 }
-
-MAX_GENERATED_ROOMS :: 5;
-MAX_ROOM_WIDTH :: 5;
-MIN_ROOM_WIDTH :: 2;
-MAX_ROOM_HEIGHT :: 5;
-MIN_ROOM_HEIGHT :: 2;
+MAX_ROOM_ATTEMPTS :: 50;
+MAX_GENERATED_ROOMS :: 10;
+MAX_CONNECTION_ATTEMPTS :: 10;
+MAX_CONNECTIONS :: 3;
+MAX_HOP_DISTANCE :: 2;
+MAX_ROOM_WIDTH :: 10;
+MIN_ROOM_WIDTH :: 4;
+MAX_ROOM_HEIGHT :: 10;
+MIN_ROOM_HEIGHT :: 4;
 generate_rooms :: proc(terrain: ^Terrain) {
-  for i in 0..<MAX_GENERATED_ROOMS {
-    x := rand_int32_range(0, 10); // TODO: bound to whole map
-    y := rand_int32_range(0, 10);
+  using terrain;
+
+  previous_room_id := -1;
+  for i in 0..<MAX_ROOM_ATTEMPTS {
+    x := rand_int32_range(0, 50);
+    y := rand_int32_range(0, 50);
     h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
     w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
 
-    possible_room := Recti{x,y,h,w}; // TODO: test intersection and create paths
+    possible_room := Recti{x,y,h,w};
 
-    create_room(terrain,possible_room);
+    if can_create_room(terrain, possible_room) {
+      created_room_id, _ := create_room(terrain,possible_room);
+      connect_rooms(terrain, created_room_id, previous_room_id);
+
+      previous_room_id = created_room_id;
+    }
+
+    if topology.n_of_rooms >= MAX_GENERATED_ROOMS { break; }
+  }
+
+  starting_room := topology.rooms[0].rect;
+  enter = { starting_room.x , starting_room.y };
+
+  topology.boss_room_id = topology.n_of_rooms - 1;
+
+  n_of_interconnections := 0;
+  for i in 0..<MAX_CONNECTION_ATTEMPTS{
+    random_id1 := rand_int32_range(0,topology.n_of_rooms);
+    random_id2 := rand_int32_range(0,topology.n_of_rooms);
+
+    hop_distance := random_id1 - random_id2;
+    if hop_distance < 0 { hop_distance = -hop_distance; }
+
+    if hop_distance <= MAX_HOP_DISTANCE { connect_rooms(terrain, random_id1, random_id2); }
+
+    if n_of_interconnections >= MAX_CONNECTIONS { break; }
   }
 }
 

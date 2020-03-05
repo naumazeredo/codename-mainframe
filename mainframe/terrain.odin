@@ -101,11 +101,11 @@ create_terrain :: proc(game_manager: ^GameManager) {
       terrain.tiles[i][j].type = TileType.None;
     }
   }
-
-  example_room := Recti{1,1,5,5};
-  create_room(&terrain, example_room);
+  clear_enemy_container(&enemy_container);
 
   generate_rooms(&terrain);
+
+  player.pos = terrain.enter;
 
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
 }
