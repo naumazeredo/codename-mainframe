@@ -51,12 +51,12 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
 
   e : sdl.Event = ---;
   for sdl.poll_event(&e) != 0 {
-    if e.type == sdl.Event_Type.Quit {
+    if e.type == .Quit {
       // @Todo(naum): change game state
       return false;
     }
 
-    if e.type == sdl.Event_Type.Key_Down {
+    if e.type == .Key_Down {
       // @Todo(naum): remove this, only for testing
       if e.key.keysym.sym == sdl.SDLK_ESCAPE {
         // @Todo(naum): change game state
@@ -69,7 +69,7 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
         temp_reset_game_manager(game_manager);
       }
 
-      if game_state == GameState.Play {
+      if game_state == .Play {
         // Player movement
         if input_manager.is_player_action_tick {
           handle_player_input(e, game_manager);
@@ -110,14 +110,14 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
   else if _is_scancode_pressed(e, input_manager.player_down)  { delta_pos = {  0,  1 }; }
 
   if delta_pos != {0, 0} && can_move_player(delta_pos, game_manager) {
-    input_manager.player_action_cache.action = PlayerActions.Move;
+    input_manager.player_action_cache.action = .Move;
     input_manager.player_action_cache.move_direction = delta_pos;
   }
 
   if _is_scancode_pressed(e, input_manager.player_pick) &&
      can_pick_file(game_manager) {
 
-    input_manager.player_action_cache.action = PlayerActions.PickFile;
+    input_manager.player_action_cache.action = .PickFile;
   }
 
   return false;

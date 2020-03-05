@@ -112,11 +112,9 @@ calculate_bfs :: proc(start, end : Vec2i, terrain: ^Terrain) -> Queue(Vec2i) {
 
     for delta in _deltas {
       next := pos + delta;
-      if next.x >= 0 && next.x < TERRAIN_W && next.y >= 0 && next.y < TERRAIN_H {
-        if _back[next.y][next.x] == {-1, -1} && is_tile_walkable(next, terrain) {
-          _back[next.y][next.x] = pos;
-          queue_insert(&q, next);
-        }
+      if is_pos_valid(next) && _back[next.y][next.x] == {-1, -1} && is_tile_walkable(next, terrain) {
+        _back[next.y][next.x] = pos;
+        queue_insert(&q, next);
       }
     }
   }
@@ -124,6 +122,62 @@ calculate_bfs :: proc(start, end : Vec2i, terrain: ^Terrain) -> Queue(Vec2i) {
   fmt.println("Didn't find a path!");
   assert(false);
   return {};
+}
+
+_dist: [TERRAIN_H][TERRAIN_W]int;
+
+ConditionType :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool;
+// @WTF(naum): Odin issue? No way to reuse ConditionType to not type the whole proc stuff everytime?
+is_tile_walkable_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
+  return is_tile_walkable(pos, terrain) && pos != start;
+}
+
+is_tile_ground_and_not_player :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
+  return terrain.tile_type[pos.y][pos.x] == .Ground && pos != start;
+}
+
+calculate_bfs_region :: proc(start: Vec2i,
+                             max_dist: int,
+                             terrain: ^Terrain,
+                             add_condition: ConditionType = is_tile_walkable_condition
+                            ) -> ([]Vec2i, []int) {
+  assert(max_dist >= 0);
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      _dist[i][j] = -1;
+    }
+  }
+
+  region_pos  : [dynamic]Vec2i;
+  region_dist : [dynamic]int;
+
+  q : Queue(Vec2i);
+  queue_insert(&q, start);
+  _dist[start.y][start.x] = 0;
+
+  for queue_len(&q) != 0 {
+    pos := queue_pop(&q);
+    dist := _dist[pos.y][pos.x];
+
+    if add_condition(start, pos, dist, terrain) {
+      append(&region_pos,  pos );
+      append(&region_dist, dist);
+    }
+
+    if dist == max_dist {
+      continue;
+    }
+
+    for delta in _deltas {
+      next := pos + delta;
+      if is_pos_valid(next) && _dist[next.y][next.x] == -1 {
+        _dist[next.y][next.x] = dist + 1;
+        queue_insert(&q, next);
+      }
+    }
+  }
+
+  return region_pos[:], region_dist[:];
 }
 
 // ----------------

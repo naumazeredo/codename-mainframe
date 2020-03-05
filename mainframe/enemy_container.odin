@@ -4,6 +4,7 @@ import "core:fmt"
 
 ENEMY_MAX :: 256;
 ENEMY_PATTERN_MAX :: 256;
+ENEMY_TIMEOUT_CPU_TOTAL :: 8;
 
 EnemyType :: enum {
   BackAndForth,
@@ -15,6 +16,7 @@ EnemyState :: enum {
   Alert,
   AlertScan,
   BackToPatrol,
+  Timeout,
 }
 
 // @Idea(naum): try #soa
@@ -56,7 +58,7 @@ enemy_type_attributes := []EnemyTypeAttribute {
   },
   {
     cpu_total = 4,
-    cpu_total_alert = 2,
+    cpu_total_alert = 3,
     pattern = {
       .MoveLeft, .MoveLeft, .Scan,
       .MoveDown, .MoveDown, .Scan,
@@ -77,10 +79,14 @@ create_enemy :: proc(type : EnemyType, pos : Vec2i, enemy_container: ^EnemyConta
   index := enemy_container.count;
   enemy_container.count += 1;
 
-  enemy_container.type[index] = type;
-  enemy_container.pos[index] = pos;
-  enemy_container.cpu_total[index] = enemy_type_attributes[int(enemy_container.type[index])].cpu_total;
-  enemy_container.cpu_count[index] = 0;
+  enemy_container.type[index]          = type;
+  enemy_container.state[index]         = .Patrol;
+  enemy_container.pos[index]           = pos;
+  enemy_container.cpu_total[index]     = enemy_type_attributes[int(enemy_container.type[index])].cpu_total;
+  enemy_container.cpu_count[index]     = 0;
+  enemy_container.pattern_count[index] = 0;
+
+  // uninitialized: last_patrol_pos, alert_pos, alert_path
 }
 
 destroy_enemy :: proc(index: u8, enemy_container: ^EnemyContainer) {
@@ -106,6 +112,29 @@ update_enemy_clock_tick :: proc(index: u8, game_manager: ^GameManager) {
     enemy_container.cpu_count[index] = 0;
 
     do_enemy_action(index, game_manager);
+  }
+}
+
+enemy_step_pattern :: proc(index: u8, game_manager: ^GameManager) {
+  using game_manager;
+
+  type := int(enemy_container.type[index]);
+
+  enemy_container.pattern_count[index] += 1;
+  if int(enemy_container.pattern_count[index]) == len(enemy_type_attributes[type].pattern) {
+    enemy_container.pattern_count[index] = 0;
+  }
+}
+
+enemy_step_back_pattern :: proc(index: u8, game_manager: ^GameManager) {
+  using game_manager;
+
+  type := int(enemy_container.type[index]);
+
+  if enemy_container.pattern_count[index] == 0 {
+    enemy_container.pattern_count[index] = u8(len(enemy_type_attributes[type].pattern));
+  } else {
+    enemy_container.pattern_count[index] -= 1;
   }
 }
 
@@ -136,10 +165,7 @@ do_enemy_action :: proc(index: u8, game_manager: ^GameManager) {
         move_enemy(index, delta_pos, game_manager);
       }
 
-      enemy_container.pattern_count[index] += 1;
-      if int(enemy_container.pattern_count[index]) == len(enemy_type_attributes[type].pattern) {
-        enemy_container.pattern_count[index] = 0;
-      }
+      enemy_step_pattern(index, game_manager);
 
     case .Alert :
       next_pos := queue_pop(&enemy_container.alert_path[index]);
@@ -175,7 +201,12 @@ do_enemy_action :: proc(index: u8, game_manager: ^GameManager) {
 
       if queue_len(&enemy_container.alert_path[index]) == 0 {
         enemy_container.state[index] = .Patrol;
+        enemy_step_back_pattern(index, game_manager);
       }
+
+    case .Timeout :
+      enemy_container.state[index] = .AlertScan;
+      enemy_container.cpu_total[index] = enemy_type_attributes[type].cpu_total_alert;
   }
 }
 
@@ -205,7 +236,11 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
   for i in -scan_size..scan_size {
     for j in -scan_size..scan_size {
       if i == 0 && j == 0 { continue; }
+
       pos := enemy_container.pos[index] + Vec2i { int(j), int(i) };
+
+      if !is_pos_valid(pos) { continue; }
+
       terrain.is_tile_being_scanned[pos.y][pos.x] = true;
 
       if player.pos == pos {
@@ -228,6 +263,9 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
                                                               player.pos,
                                                               &terrain);
 
+          case .Timeout :
+          fallthrough;
+
           case .BackToPatrol :
             fmt.println("scanning while going back to patrol should not happen!");
             assert(false);
@@ -237,4 +275,16 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
   }
 
   return player_found;
+}
+
+enemy_timeout :: proc(index: u8, game_manager: ^GameManager) {
+  using game_manager;
+
+  if enemy_container.state[index] == .Patrol {
+    enemy_container.last_patrol_pos[index] = enemy_container.pos[index];
+  }
+
+  enemy_container.state[index] = .Timeout;
+  enemy_container.cpu_total[index] = ENEMY_TIMEOUT_CPU_TOTAL;
+  enemy_container.cpu_count[index] = 0;
 }

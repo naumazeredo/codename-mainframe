@@ -8,7 +8,7 @@ import sdl_ttf "shared:odin-sdl2/ttf"
 FRAMES_PER_SEC :: 60;
 FRAME_DURATION :: 1.0 / FRAMES_PER_SEC;
 
-CLOCK_TICK :: 0.5;
+CLOCK_TICK :: 0.3333;
 
 // @Todo(naum): create GameStateEnum to know if the game is in menu, in-game, etc
 GameState :: enum {
@@ -70,7 +70,7 @@ create_game_manager :: proc() -> ^GameManager {
   // Systems
   // -------
 
-  game_state = GameState.Play;
+  game_state = .Play;
 
   create_input_manager(&input_manager);
   create_render_manager(&render_manager);
@@ -105,8 +105,7 @@ start_new_frame :: proc(game_manager: ^GameManager) {
   game_time += game_frame_duration;
 
   // Game play logic
-  if game_state == GameState.Play {
-
+  if game_state == .Play {
     for game_time - last_game_time_clock_tick >= CLOCK_TICK {
       clock_ticks += 1;
       last_game_time_clock_tick += CLOCK_TICK;
@@ -119,6 +118,8 @@ start_new_frame :: proc(game_manager: ^GameManager) {
       for i in 0..<enemy_container.count {
         update_enemy_clock_tick(i, game_manager);
       }
+
+      check_for_player_damage(game_manager);
     }
   }
 }
@@ -128,6 +129,24 @@ generate_terrain :: proc(game_manager: ^GameManager) {
 
   //create_terrain(game_manager);
   create_test_terrain(game_manager);
+}
+
+check_for_player_damage :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  has_taken_damage := false;
+
+  for i in 0..<enemy_container.count {
+    if enemy_container.pos[i] == player.pos &&
+       enemy_container.state[i] != .Timeout {
+      has_taken_damage = true;
+      enemy_timeout(i, game_manager);
+    }
+  }
+
+  if has_taken_damage {
+    player_take_damage(game_manager);
+  }
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {
@@ -177,7 +196,7 @@ temp_reset_game_manager :: proc(game_manager: ^GameManager) {
   // Systems
   // -------
 
-  game_state = GameState.Play;
+  game_state = .Play;
 
   // ------
   // Player

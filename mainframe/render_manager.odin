@@ -137,7 +137,7 @@ render_terrain :: proc(game_manager : ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      if terrain.tile_type[i][j] == TileType.None {
+      if terrain.tile_type[i][j] == .None {
         continue;
       }
 
@@ -148,7 +148,7 @@ render_terrain :: proc(game_manager : ^GameManager) {
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
       };
 
-      if terrain.tile_type[i][j] == TileType.Ground {
+      if terrain.tile_type[i][j] == .Ground {
         sdl.set_render_draw_color(
           render_manager.renderer,
           GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a
@@ -218,10 +218,11 @@ render_enemies :: proc(game_manager: ^GameManager) {
       i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
     };
 
-    if enemy_container.state[i] == .Alert {
-      sdl.set_render_draw_color(render_manager.renderer, 255, 20, 10, 255);
-    } else {
-      sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
+    #partial switch enemy_container.state[i] {
+      case .AlertScan : fallthrough;
+      case .Alert     : sdl.set_render_draw_color(render_manager.renderer, 255, 20, 10, 255);
+      case .Timeout   : sdl.set_render_draw_color(render_manager.renderer, 100, 80, 200, 255);
+      case            : sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
     }
     sdl.render_fill_rect(render_manager.renderer, &rect);
   }

@@ -29,7 +29,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      terrain.tile_type[i][j] = TileType.None;
+      terrain.tile_type[i][j] = .None;
       terrain.is_tile_being_scanned[i][j] = false;
     }
   }
@@ -59,20 +59,20 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
 
   for row, i in custom_terrain {
     for elem, j in row {
-      terrain.tile_type[i][j] = TileType.Ground;
+      terrain.tile_type[i][j] = .Ground;
 
       switch elem {
         case 0: // nothing
-          terrain.tile_type[i][j] = TileType.None;
+          terrain.tile_type[i][j] = .None;
         case 1: // player
           terrain.enter = Vec2i{ j, i };
           player.pos = terrain.enter;
         case 3: // file
-          terrain.tile_type[i][j] = TileType.File;
+          terrain.tile_type[i][j] = .File;
         case 4: // enemy back and forth
-          create_enemy(EnemyType.BackAndForth, { j, i }, &enemy_container);
+          create_enemy(.BackAndForth, { j, i }, &enemy_container);
         case 5: // enemy circle 3x3
-          create_enemy(EnemyType.Circle3x3, { j, i }, &enemy_container);
+          create_enemy(.Circle3x3, { j, i }, &enemy_container);
       }
     }
   }
@@ -97,7 +97,7 @@ create_terrain :: proc(game_manager: ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      terrain.tile_type[i][j] = TileType.None;
+      terrain.tile_type[i][j] = .None;
     }
   }
   clear_enemy_container(&enemy_container);
@@ -126,7 +126,7 @@ is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
     return false;
   }
 
-  return terrain.tile_type[pos.y][pos.x] != TileType.None;
+  return terrain.tile_type[pos.y][pos.x] != .None;
 }
 
 is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
@@ -135,7 +135,11 @@ is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
     return false;
   }
 
-  return terrain.tile_type[pos.y][pos.x] == TileType.File;
+  return terrain.tile_type[pos.y][pos.x] == .File;
+}
+
+is_pos_valid :: proc(pos: Vec2i) -> bool {
+  return pos.x >= 0 && pos.x < TERRAIN_W && pos.y >= 0 && pos.y < TERRAIN_H;
 }
 
 // @XXX
