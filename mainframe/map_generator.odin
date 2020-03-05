@@ -31,7 +31,7 @@ create_room :: proc(terrain: ^Terrain, room_rect: Recti) -> (int, bool) {
 
   for i in room_rect.x..<room_rect.x+room_rect.w {
     for j in room_rect.y..<room_rect.y+room_rect.h {
-      tiles[j][i].type = TileType.Ground;
+      tile_type[j][i] = TileType.Ground;
     }
   }
 
@@ -87,7 +87,7 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
     tunnel_y := rand_int32_range(lower_bound, upper_bound);
 
     for x in left_room.x + left_room.w .. right_room.x {
-      tiles[tunnel_y][x].type = TileType.Ground;
+      tile_type[tunnel_y][x] = TileType.Ground;
     }
 
     _append_tunnel(&topology , id1, id2);
@@ -104,7 +104,7 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
     tunnel_x := rand_int32_range(lower_bound,upper_bound);
 
     for y in upper_room.y + upper_room.h .. lower_room.y {
-      tiles[y][tunnel_x].type = TileType.Ground;
+      tile_type[y][tunnel_x] = TileType.Ground;
     }
 
     _append_tunnel(&topology , id1, id2);

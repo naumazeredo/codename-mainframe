@@ -15,12 +15,10 @@ TileType :: enum {
   File,
 }
 
-Tile :: struct {
-  type : TileType,
-}
-
+// @Idea(naum): Maybe test #soa
 Terrain :: struct {
-  tiles : [TERRAIN_H][TERRAIN_W] Tile,
+  tile_type : [TERRAIN_H][TERRAIN_W]TileType,
+  is_tile_being_scanned : [TERRAIN_H][TERRAIN_W]bool,
   enter : Vec2i,
 
   topology: Topology,
@@ -31,7 +29,8 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      terrain.tiles[i][j].type = TileType.None;
+      terrain.tile_type[i][j] = TileType.None;
+      terrain.is_tile_being_scanned[i][j] = false;
     }
   }
 
@@ -60,16 +59,16 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
 
   for row, i in custom_terrain {
     for elem, j in row {
-      terrain.tiles[i][j].type = TileType.Ground;
+      terrain.tile_type[i][j] = TileType.Ground;
 
       switch elem {
         case 0: // nothing
-          terrain.tiles[i][j].type = TileType.None;
+          terrain.tile_type[i][j] = TileType.None;
         case 1: // player
           terrain.enter = Vec2i{ j, i };
           player.pos = terrain.enter;
         case 3: // file
-          terrain.tiles[i][j].type = TileType.File;
+          terrain.tile_type[i][j] = TileType.File;
         case 4: // enemy back and forth
           create_enemy(EnemyType.BackAndForth, { j, i }, &enemy_container);
         case 5: // enemy circle 3x3
@@ -98,7 +97,7 @@ create_terrain :: proc(game_manager: ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      terrain.tiles[i][j].type = TileType.None;
+      terrain.tile_type[i][j] = TileType.None;
     }
   }
   clear_enemy_container(&enemy_container);
@@ -110,13 +109,23 @@ create_terrain :: proc(game_manager: ^GameManager) {
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
 }
 
+update_terrain_clock_tick :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      terrain.is_tile_being_scanned[i][j] = false;
+    }
+  }
+}
+
 is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
   if pos.y < 0 || pos.y >= TERRAIN_H ||
      pos.x < 0 || pos.x >= TERRAIN_W {
     return false;
   }
 
-  return terrain.tiles[pos.y][pos.x].type != TileType.None;
+  return terrain.tile_type[pos.y][pos.x] != TileType.None;
 }
 
 is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
@@ -125,7 +134,7 @@ is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
     return false;
   }
 
-  return terrain.tiles[pos.y][pos.x].type == TileType.File;
+  return terrain.tile_type[pos.y][pos.x] == TileType.File;
 }
 
 // @XXX

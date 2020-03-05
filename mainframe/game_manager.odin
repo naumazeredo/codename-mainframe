@@ -113,6 +113,7 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 
       clock_debugger.fill_percentage = 0;
 
+      update_terrain_clock_tick(game_manager);
       update_player_clock_tick(game_manager);
 
       for i in 0..<enemy_container.count {

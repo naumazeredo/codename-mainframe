@@ -53,11 +53,7 @@ update_player_clock_tick :: proc(game_manager: ^GameManager) {
 can_move_player :: proc(delta_pos: Vec2i, game_manager: ^GameManager) -> bool {
   using game_manager;
 
-  new_pos := Vec2i {
-    player.pos.x + delta_pos.x,
-    player.pos.y + delta_pos.y
-  };
-
+  new_pos := player.pos + delta_pos;
   return is_tile_walkable(new_pos, &terrain);
 }
 
@@ -66,11 +62,7 @@ move_player :: proc(delta_pos: Vec2i, game_manager: ^GameManager) {
 
   assert(can_move_player(delta_pos, game_manager));
 
-  new_pos := Vec2i {
-    player.pos.x + delta_pos.x,
-    player.pos.y + delta_pos.y
-  };
-
+  new_pos := player.pos + delta_pos;
   player.pos = new_pos;
 }
 
@@ -86,6 +78,6 @@ pick_file :: proc(game_manager: ^GameManager) {
 
   assert(can_pick_file(game_manager));
 
-  terrain.tiles[player.pos.y][player.pos.x].type = TileType.Ground;
+  terrain.tile_type[player.pos.y][player.pos.x] = TileType.Ground;
   player.inventory_count += 1;
 }

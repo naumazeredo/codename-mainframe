@@ -116,6 +116,7 @@ render :: proc(game_manager : ^GameManager) {
       render_terrain(game_manager);
       render_player(game_manager);
       render_enemies(game_manager);
+      render_scan(game_manager);
 
       // HUD
       render_clock_debugger(game_manager);
@@ -136,7 +137,7 @@ render_terrain :: proc(game_manager : ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      if terrain.tiles[i][j].type == TileType.None {
+      if terrain.tile_type[i][j] == TileType.None {
         continue;
       }
 
@@ -147,7 +148,7 @@ render_terrain :: proc(game_manager : ^GameManager) {
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
       };
 
-      if terrain.tiles[i][j].type == TileType.Ground {
+      if terrain.tile_type[i][j] == TileType.Ground {
         sdl.set_render_draw_color(
           render_manager.renderer,
           GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a
@@ -158,6 +159,34 @@ render_terrain :: proc(game_manager : ^GameManager) {
           FILE_COLOR.r, FILE_COLOR.g, FILE_COLOR.b, FILE_COLOR.a
         );
       }
+
+      sdl.render_fill_rect(render_manager.renderer, &tile_rect);
+    }
+  }
+}
+
+render_scan :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  SCAN_COLOR :: Color {100, 255, 100, 128};
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      if !terrain.is_tile_being_scanned[i][j] {
+        continue;
+      }
+
+      tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
+
+      tile_rect := sdl.Rect {
+        i32(tile_pos.x + 1), i32(tile_pos.y + 1),
+        i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
+      };
+
+      sdl.set_render_draw_color(
+        render_manager.renderer,
+        SCAN_COLOR.r, SCAN_COLOR.g, SCAN_COLOR.b, SCAN_COLOR.a
+      );
 
       sdl.render_fill_rect(render_manager.renderer, &tile_rect);
     }
@@ -189,7 +218,11 @@ render_enemies :: proc(game_manager: ^GameManager) {
       i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
     };
 
-    sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
+    if enemy_container.state[i] == .Alert {
+      sdl.set_render_draw_color(render_manager.renderer, 255, 20, 10, 255);
+    } else {
+      sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
+    }
     sdl.render_fill_rect(render_manager.renderer, &rect);
   }
 }
