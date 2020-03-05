@@ -102,7 +102,8 @@ create_terrain :: proc(game_manager: ^GameManager) {
   }
   clear_enemy_container(&enemy_container);
 
-  generate_rooms(&terrain);
+  //generate_rooms(&terrain);
+  create_boss_room_template(&terrain);
 
   player.pos = terrain.enter;
 

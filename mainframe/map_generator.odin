@@ -44,6 +44,51 @@ create_room :: proc(terrain: ^Terrain, room_rect: Recti) -> (int, bool) {
   return room_id, true;
 }
 
+create_boss_room_template :: proc(terrain : ^Terrain) {
+  using terrain.topology;
+
+  boss_x := rand_int32_range(50, 100);
+  boss_y := rand_int32_range(50, 100);
+  boss_h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
+  boss_w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
+  boss_room := Recti{boss_x,boss_y,boss_w,boss_h};
+
+  boss_room_id, _ = create_room(terrain, boss_room);
+
+  boss_mid_y := boss_y + (boss_w) / 2;
+  boss_mid_x := boss_x + (boss_h) / 2;
+
+  h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
+  w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
+  x := boss_x - w - MAX_ROOM_WIDTH/2;
+  y := boss_mid_y - h/2;
+  boss_left_room := Recti{x,y,w,h};
+
+  room_id, _ := create_room(terrain,boss_left_room);
+  connect_rooms(terrain, boss_room_id, room_id);
+
+  h = rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
+  w = rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
+  x = boss_x + boss_w + MAX_ROOM_WIDTH/2;
+  y = boss_mid_y - h/2;
+  boss_right_room := Recti{x,y,w,h};
+
+  room_id, _ = create_room(terrain,boss_right_room);
+  connect_rooms(terrain, boss_room_id, room_id);
+
+  h = rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
+  w = rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
+  x = boss_mid_x - w/2;
+  y = boss_y - h - MAX_ROOM_HEIGHT/2;
+  boss_upper_room := Recti{x,y,w,w};
+
+  room_id, _ = create_room(terrain,boss_upper_room);
+  connect_rooms(terrain, boss_room_id, room_id);
+
+  terrain.enter = Vec2i{boss_x, boss_y};
+
+}
+
 can_rooms_coexist:: proc(a,b : Recti) -> bool {
   return (a.x + a.w < b.x || b.x + b.w < a.x) &&
          (a.y + a.w < b.y || b.y + b.w < a.y);
