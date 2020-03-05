@@ -42,19 +42,21 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   // 3 -> file
   // 4 -> patrol AMS (left)
   // 5 -> circle AMS (down)
-  custom_terrain := [12][12]u8 {
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 2, 2, 5, 2, 0, 0, 2, 2, 2, 0 },
-    { 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 0 },
-    { 0, 2, 2, 2, 2, 2, 0, 0, 2, 2, 2, 0 },
-    { 0, 2, 2, 2, 2, 2, 0, 0, 0, 2, 0, 0 },
-    { 0, 0, 0, 0, 2, 0, 0, 2, 2, 2, 2, 0 },
-    { 0, 0, 0, 0, 2, 2, 2, 2, 3, 2, 2, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 2, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 2, 3, 1, 2, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+  custom_terrain := [][]u8 {
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 2, 2, 2, 5, 2, 0, 0, 2, 2, 2, 0, 0 },
+    { 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 0, 0 },
+    { 0, 0, 2, 2, 2, 2, 2, 0, 0, 2, 2, 2, 0, 0 },
+    { 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 2, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0 },
+    { 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 2, 2, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 2, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 1, 2, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
   };
 
   for row, i in custom_terrain {
@@ -81,6 +83,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
 
   // mock terrain generation TODO(luciano): remove
 
+  /*
   id1, _ := create_room(&terrain, Recti{5, 15, 5, 5});
   id3, _ := create_room(&terrain, Recti{6, 12, 2, 2});
   id4, _ := create_room(&terrain, Recti{1, 12, 2, 2});
@@ -90,6 +93,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   connect_rooms(&terrain, id1, id4);
   connect_rooms(&terrain, id1, id5);
   connect_rooms(&terrain, id1, id6);
+  */
 }
 
 create_terrain :: proc(game_manager: ^GameManager) {

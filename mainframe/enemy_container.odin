@@ -54,7 +54,8 @@ enemy_type_attributes := []EnemyTypeAttribute {
       .MoveLeft, .MoveLeft, .Scan,
       .MoveRight, .MoveRight, .Scan,
     },
-    scan_size = 1,
+    //scan_size = 1,
+    scan_size = 2,
   },
   {
     cpu_total = 4,
@@ -65,7 +66,8 @@ enemy_type_attributes := []EnemyTypeAttribute {
       .MoveRight, .MoveRight, .Scan,
       .MoveUp, .MoveUp, .Scan,
     },
-    scan_size = 2,
+    //scan_size = 2,
+    scan_size = 3,
   },
 };
 
@@ -132,7 +134,7 @@ enemy_step_back_pattern :: proc(index: u8, game_manager: ^GameManager) {
   type := int(enemy_container.type[index]);
 
   if enemy_container.pattern_count[index] == 0 {
-    enemy_container.pattern_count[index] = u8(len(enemy_type_attributes[type].pattern));
+    enemy_container.pattern_count[index] = u8(len(enemy_type_attributes[type].pattern)-1);
   } else {
     enemy_container.pattern_count[index] -= 1;
   }
@@ -233,6 +235,11 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
   type := int(enemy_container.type[index]);
   scan_size := int(enemy_type_attributes[type].scan_size);
 
+  //scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index], scan_size, &terrain);
+  scan_region_pos, _ := calculate_bfs_region(enemy_container.pos[index], scan_size, &terrain, condition_true);
+  for pos in scan_region_pos {
+
+  /*
   for i in -scan_size..scan_size {
     for j in -scan_size..scan_size {
       if i == 0 && j == 0 { continue; }
@@ -240,6 +247,7 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
       pos := enemy_container.pos[index] + Vec2i { int(j), int(i) };
 
       if !is_pos_valid(pos) { continue; }
+      */
 
       terrain.is_tile_being_scanned[pos.y][pos.x] = true;
 
@@ -272,7 +280,9 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
         }
       }
     }
+    /*
   }
+  */
 
   return player_found;
 }

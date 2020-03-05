@@ -128,11 +128,13 @@ _dist: [TERRAIN_H][TERRAIN_W]int;
 
 ConditionType :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool;
 // @WTF(naum): Odin issue? No way to reuse ConditionType to not type the whole proc stuff everytime?
+condition_true :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool { return true; }
+
 is_tile_walkable_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
   return is_tile_walkable(pos, terrain) && pos != start;
 }
 
-is_tile_ground_and_not_player :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
+is_tile_ground_and_not_start :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain: ^Terrain) -> bool {
   return terrain.tile_type[pos.y][pos.x] == .Ground && pos != start;
 }
 

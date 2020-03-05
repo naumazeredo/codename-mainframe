@@ -102,7 +102,7 @@ player_take_damage :: proc(game_manager: ^GameManager) {
   for i := PLAYER_DROP_SIZE ; i < 10 ; i += 1 {
     region_pos, _ = calculate_bfs_region(
       player.pos, i, &terrain,
-      is_tile_ground_and_not_player
+      is_tile_ground_and_not_start
     );
 
     if len(region_pos) - 1 >= int(player.inventory_count) - 1 {
