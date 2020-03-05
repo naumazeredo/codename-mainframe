@@ -131,11 +131,11 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   }
 
   for y in y_lower .. y_upper {
-    tiles[y][tunnel_x].type = TileType.Ground;
-  }
+    tile_type[y][tunnel_x] = TileType.Ground;
+   }
 
   for x in x_lower .. x_upper {
-    tiles[tunnel_y][x].type = TileType.Ground;
+    tile_type[tunnel_y][x] = TileType.Ground;
   }
 
   return true;
