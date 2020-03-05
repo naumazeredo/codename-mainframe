@@ -24,6 +24,7 @@ EnemyContainer :: struct {
   type            : [ENEMY_MAX]EnemyType,
   state           : [ENEMY_MAX]EnemyState,
   pos             : [ENEMY_MAX]Vec2i,
+  cpu_total       : [ENEMY_MAX]u8,
   cpu_count       : [ENEMY_MAX]u8,
   pattern_count   : [ENEMY_MAX]u8,
   last_patrol_pos : [ENEMY_MAX]Vec2i,
@@ -46,7 +47,7 @@ EnemyTypeAttribute :: struct {
 enemy_type_attributes := []EnemyTypeAttribute {
   {
     cpu_total = 6,
-    cpu_total_alert = 3,
+    cpu_total_alert = 4,
     pattern = {
       .MoveLeft, .MoveLeft, .Scan,
       .MoveRight, .MoveRight, .Scan,
@@ -73,12 +74,13 @@ clear_enemy_container :: proc(enemy_container: ^EnemyContainer) {
 create_enemy :: proc(type : EnemyType, pos : Vec2i, enemy_container: ^EnemyContainer) {
   assert(enemy_container.count != ENEMY_MAX-1);
 
-  id := enemy_container.count;
+  index := enemy_container.count;
   enemy_container.count += 1;
 
-  enemy_container.type[id] = type;
-  enemy_container.pos[id] = pos;
-  enemy_container.cpu_count[id] = 0;
+  enemy_container.type[index] = type;
+  enemy_container.pos[index] = pos;
+  enemy_container.cpu_total[index] = enemy_type_attributes[int(enemy_container.type[index])].cpu_total;
+  enemy_container.cpu_count[index] = 0;
 }
 
 destroy_enemy :: proc(index: u8, enemy_container: ^EnemyContainer) {
@@ -88,10 +90,11 @@ destroy_enemy :: proc(index: u8, enemy_container: ^EnemyContainer) {
     return;
   }
 
-  last_id := enemy_container.count;
-  enemy_container.type[index] = enemy_container.type[last_id];
-  enemy_container.pos[index] = enemy_container.pos[last_id];
-  enemy_container.cpu_count[index] = enemy_container.cpu_count[last_id];
+  last_index := enemy_container.count;
+  enemy_container.type[index] = enemy_container.type[last_index];
+  enemy_container.pos[index] = enemy_container.pos[last_index];
+  enemy_container.cpu_total[index] = enemy_container.cpu_total[last_index];
+  enemy_container.cpu_count[index] = enemy_container.cpu_count[last_index];
 }
 
 update_enemy_clock_tick :: proc(index: u8, game_manager: ^GameManager) {
@@ -99,8 +102,7 @@ update_enemy_clock_tick :: proc(index: u8, game_manager: ^GameManager) {
 
   enemy_container.cpu_count[index] += 1;
 
-  type := int(enemy_container.type[index]);
-  if enemy_container.cpu_count[index] == enemy_type_attributes[type].cpu_total {
+  if enemy_container.cpu_count[index] == enemy_container.cpu_total[index] {
     enemy_container.cpu_count[index] = 0;
 
     do_enemy_action(index, game_manager);
@@ -111,12 +113,12 @@ update_enemy_clock_tick :: proc(index: u8, game_manager: ^GameManager) {
 do_enemy_action :: proc(index: u8, game_manager: ^GameManager) {
   using game_manager;
 
+  type := int(enemy_container.type[index]);
   switch enemy_container.state[index] {
     case .Patrol :
       pattern_count := enemy_container.pattern_count[index];
 
       delta_pos : Vec2i;
-      type := int(enemy_container.type[index]);
       switch enemy_type_attributes[type].pattern[pattern_count] {
         case .MoveLeft :
           delta_pos = Vec2i{ -1, 0 };
@@ -156,6 +158,7 @@ do_enemy_action :: proc(index: u8, game_manager: ^GameManager) {
 
       if !player_found {
         enemy_container.state[index] = .BackToPatrol;
+        enemy_container.cpu_total[index] = enemy_type_attributes[type].cpu_total;
 
         enemy_container.alert_path[index] = calculate_bfs(enemy_container.pos[index],
                                                           enemy_container.last_patrol_pos[index],
@@ -212,6 +215,7 @@ do_enemy_scan :: proc(index: u8, game_manager: ^GameManager) -> bool {
         switch enemy_container.state[index] {
           case .Patrol :
             enemy_container.last_patrol_pos[index] = enemy_container.pos[index];
+            enemy_container.cpu_total[index] = enemy_type_attributes[type].cpu_total_alert;
           fallthrough;
 
           case .AlertScan:

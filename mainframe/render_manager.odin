@@ -249,7 +249,7 @@ render_cpu_counts :: proc(game_manager: ^GameManager) {
     pos = enemy_container.pos[i] * TILE_SIZE - render_manager.camera_pos;
     type := int(enemy_container.type[i]);
     render_cpu_count(
-      enemy_container.cpu_count[i], enemy_type_attributes[type].cpu_total,
+      enemy_container.cpu_count[i], enemy_container.cpu_total[i],
       { pos.x + TILE_SIZE/2, pos.y },
       game_manager
     );
