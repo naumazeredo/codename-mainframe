@@ -35,7 +35,6 @@ RenderManager :: struct {
   texture_sizes : [TEXTURE_TOTAL]Vec2i,
 
   camera_pos : Vec2i,
-  //update_camera_pos : bool,
 }
 
 create_render_manager :: proc(render_manager: ^RenderManager) {
@@ -137,15 +136,6 @@ _load_textures :: proc(render_manager: ^RenderManager) {
 render :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  // Update render information
-  /*
-  // @XXX(naum): use update_camera_pos?
-  if render_manager.update_camera_pos {
-    render_manager.camera_pos = player.pos * TILE_SIZE + TILE_SIZE / 2 - { VIEW_W / 2, VIEW_H / 2 };
-    render_manager.update_camera_pos = false;
-  }
-  */
-
   render_manager.camera_pos = player.pos * TILE_SIZE + TILE_SIZE / 2 - { VIEW_W / 2, VIEW_H / 2 };
 
   viewport_rect : sdl.Rect;
@@ -182,18 +172,6 @@ render :: proc(game_manager : ^GameManager) {
 
 render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
-
-  /*
-  NONE_DARK_COLOR   :: Color {0, 0, 0, 0};
-  NONE_COLOR        :: Color {2, 2, 2, 255};
-  GROUND_DARK_COLOR :: Color {20, 20, 20, 255};
-  GROUND_COLOR      :: Color {100, 100, 100, 255};
-  FILE_COLOR        :: Color {80, 200, 60, 255};
-
-  CIRCLE_COLOR      :: Color {255, 0, 0, 255};
-  TRIANGLE_COLOR    :: Color {0, 255, 0, 255};
-  SQUARE_COLOR      :: Color {0, 0, 255, 255};
-  */
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
@@ -282,13 +260,6 @@ render_scan :: proc(game_manager : ^GameManager) {
         i32(TILE_SIZE.x - 2), i32(TILE_SIZE.y - 2)
       };
 
-      /*
-      tile_rect := sdl.Rect {
-        i32(tile_pos.x), i32(tile_pos.y),
-        i32(TILE_SIZE.x), i32(TILE_SIZE.y)
-      };
-      */
-
       sdl.set_render_draw_color(
         render_manager.renderer,
         SCAN_COLOR.r, SCAN_COLOR.g, SCAN_COLOR.b, SCAN_COLOR.a
@@ -337,17 +308,6 @@ render_enemies :: proc(game_manager: ^GameManager) {
       i32(render_manager.texture_sizes[1].x),
       i32(render_manager.texture_sizes[1].y),
     };
-
-    /*
-    #partial switch enemy_container.state[i] {
-      case .AlertScan : fallthrough;
-      case .Alert     : sdl.set_render_draw_color(render_manager.renderer, 255, 20, 10, 255);
-      case .Timeout   : sdl.set_render_draw_color(render_manager.renderer, 100, 80, 200, 255);
-      case            : sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
-    }
-
-    sdl.render_fill_rect(render_manager.renderer, &rect);
-    */
 
     // @Todo(naum): not use color modulation, use different sprites
     color_mod := Color { 255, 255, 255, 255 };
