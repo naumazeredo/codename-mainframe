@@ -18,7 +18,7 @@ Player :: struct {
 }
 
 create_player :: proc(player: ^Player) {
-  player.cpu_total = 3;
+  player.cpu_total = 1;
   player.cpu_count = 0;
 
   player.inventory_total = 3;
@@ -45,8 +45,9 @@ update_player_clock_tick :: proc(game_manager: ^GameManager) {
         );
       case .UseScript :
         //
-      case .PickFile :
-        pick_file(game_manager);
+      case .Action :
+        try_pick_file(game_manager);
+        try_press_button(game_manager);
     }
 
     input_manager.player_action_cache.action = .None;
@@ -84,13 +85,61 @@ can_pick_file :: proc(game_manager: ^GameManager) -> bool {
 }
 
 // @Todo(naum): rename to player_pick_file
-pick_file :: proc(game_manager: ^GameManager) {
+try_pick_file :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  assert(can_pick_file(game_manager));
+  if !can_pick_file(game_manager) { return ; }
 
   terrain.tile_type[player.pos.y][player.pos.x] = .Ground;
   player.inventory_count += 1;
+}
+
+is_over_button :: proc(game_manager: ^GameManager) -> bool{
+  using game_manager;
+  current_tile := terrain.tile_type[player.pos.y][player.pos.x];
+  return current_tile == .Circle || current_tile == .Triangle || current_tile == .Square;
+}
+
+can_press_button  :: proc(game_manager: ^GameManager) -> bool {
+  return is_over_button(game_manager) && !is_button_pressed(game_manager);
+}
+
+is_button_pressed :: proc(game_manager: ^GameManager) -> bool {
+  using game_manager;
+  current_tile := terrain.tile_type[player.pos.y][player.pos.x];
+
+  id := get_button_id(current_tile);
+  if id == -1 { return false; }
+  
+  return terrain.is_button_pressed[id];
+}
+
+
+try_press_button :: proc(game_manager: ^GameManager) {
+  using game_manager;
+  
+  if !is_over_button(game_manager) { return; }
+
+  current_tile := terrain.tile_type[player.pos.y][player.pos.x];
+
+  id := get_button_id(current_tile);
+  if id == -1 { return ; }
+  
+  if !terrain.is_button_pressed[id] {
+    if button_sequence[sequence_index] == current_tile {
+      terrain.is_button_pressed[id] = true;
+      sequence_index += 1;
+
+      fmt.println("right button!");
+    } else {
+      for i in 0..2 {
+        terrain.is_button_pressed[i] = false;
+      }
+      sequence_index = 0;
+
+      fmt.println("wrong button!");
+    }
+  }
 }
 
 player_take_damage :: proc(game_manager: ^GameManager) {

@@ -181,6 +181,10 @@ render_terrain :: proc(game_manager : ^GameManager) {
   FILE_COLOR        :: Color {80, 200, 60, 255};
   */
 
+  CIRCLE_COLOR      :: Color {255, 0, 0, 255};
+  TRIANGLE_COLOR    :: Color {0, 255, 0, 255};
+  SQUARE_COLOR      :: Color {0, 0, 255, 255};
+
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
       //if terrain.is_tile_hidden[i][j] { continue; }
@@ -202,6 +206,9 @@ render_terrain :: proc(game_manager : ^GameManager) {
           case .Ground   : color = GROUND_COLOR;
           case .File     : color = FILE_COLOR;
           case .Entrance : color = GROUND_COLOR;
+          case .Circle   : color = CIRCLE_COLOR;
+          case .Triangle : color = TRIANGLE_COLOR;
+          case .Square   : color = SQUARE_COLOR;
         }
       } else {
         #partial switch terrain.tile_type[i][j] {
@@ -209,6 +216,9 @@ render_terrain :: proc(game_manager : ^GameManager) {
           case .Ground   : color = GROUND_DARK_COLOR;
           case .File     : color = GROUND_DARK_COLOR;
           case .Entrance : color = GROUND_DARK_COLOR;
+          case .Circle   : color = GROUND_DARK_COLOR;
+          case .Triangle : color = GROUND_DARK_COLOR;
+          case .Square   : color = GROUND_DARK_COLOR;
         }
       }
 
@@ -497,7 +507,7 @@ render_player_next_action :: proc(game_manager : ^GameManager) {
     case .UseScript:
       // @Todo(naum): HUD for script use
 
-    case .PickFile:
+    case .Action:
       count := int(player.inventory_count);
 
       pos := Vec2i {

@@ -44,14 +44,17 @@ create_room :: proc(terrain: ^Terrain, room_rect: Recti) -> (int, bool) {
   return room_id, true;
 }
 
-create_boss_room_template :: proc(terrain : ^Terrain) {
+create_boss_room :: proc(terrain : ^Terrain) {
   using terrain.topology;
 
-  boss_x := rand_int32_range(50, 100);
-  boss_y := rand_int32_range(50, 100);
-  boss_h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
+  boss_x := TERRAIN_W/2;
+  boss_y := TERRAIN_H/2;
+  boss_h := rand_int32_range(MIN_ROOM_HEIGHT, MAX_ROOM_HEIGHT+1);
   boss_w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
   boss_room := Recti{boss_x,boss_y,boss_w,boss_h};
+
+  terrain.tile_type[boss_y][boss_x] = .Entrance;
+  terrain.enter = Vec2i{boss_x, boss_y};
 
   boss_room_id, _ = create_room(terrain, boss_room);
 
@@ -85,8 +88,22 @@ create_boss_room_template :: proc(terrain : ^Terrain) {
   room_id, _ = create_room(terrain,boss_upper_room);
   connect_rooms(terrain, boss_room_id, room_id);
 
-  terrain.tile_type[boss_y][boss_x] = .Entrance;
-  terrain.enter = Vec2i{boss_x, boss_y};
+  place_buttons(terrain);
+}
+
+place_buttons :: proc(terrain : ^Terrain) {
+  using terrain.topology;
+
+  // TODO(luciano): randomize button placements
+  room := rooms[1].rect;
+  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Circle;
+
+  room = rooms[2].rect;
+  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Square;
+
+  room = rooms[3].rect;
+  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Triangle;
+
 }
 
 can_rooms_coexist:: proc(a,b : Recti) -> bool {
@@ -100,6 +117,22 @@ can_create_room :: proc (terrain : ^Terrain, room : Recti) -> bool {
     if !can_rooms_coexist(topology.rooms[i].rect, room) { return false; }
   }
 
+  return true;
+}
+
+is_empty_area :: proc(terrain : ^Terrain, room :Recti) -> bool {
+  using terrain;
+
+  lower_limit_y := room.y == 0 ? room.y : room.y -1;
+  lower_limit_x := room.x == 0 ? room.x : room.x -1;
+
+  for x in lower_limit_x..room.x+room.w {
+    for y in lower_limit_y..room.y+room.h {
+      if tile_type[y][x] != TileType.None {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
@@ -200,6 +233,7 @@ _append_tunnel :: proc(topology : ^Topology, id1,id2: int) {
   topology.tunnels[topology.n_of_tunnels] = [2]int{id1,id2};
   topology.n_of_tunnels += 1;
 }
+
 MAX_ROOM_ATTEMPTS :: 50;
 MAX_GENERATED_ROOMS :: 10;
 MAX_CONNECTION_ATTEMPTS :: 10;
@@ -209,45 +243,60 @@ MAX_ROOM_WIDTH :: 10;
 MIN_ROOM_WIDTH :: 4;
 MAX_ROOM_HEIGHT :: 10;
 MIN_ROOM_HEIGHT :: 4;
+EXPANSION_STEP :: 5;
 generate_rooms :: proc(terrain: ^Terrain) {
   using terrain;
 
-  previous_room_id := -1;
-  for i in 0..<MAX_ROOM_ATTEMPTS {
-    x := rand_int32_range(0, 50);
-    y := rand_int32_range(0, 50);
+  create_boss_room(terrain);
+
+  random_id := topology.boss_room_id;
+  random_room := topology.rooms[random_id];
+  directions := [4][2]int{ {0,1}, {0,-1}, {1,0}, {-1,0} };
+  expansion_direction := directions[0];
+  for i in 0..<MAX_GENERATED_ROOMS {
+  
+    expansion_start := pick_room_spot(topology.rooms[random_id].rect);
     h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
     w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
-
-    possible_room := Recti{x,y,h,w};
-
-    if can_create_room(terrain, possible_room) {
-      created_room_id, _ := create_room(terrain,possible_room);
-      connect_rooms(terrain, created_room_id, previous_room_id);
-
-      previous_room_id = created_room_id;
+  
+    possible_room := Recti{expansion_start.x,expansion_start.y,h,w};
+    for !is_empty_area(terrain,possible_room) {
+      possible_room.x += expansion_direction.x * EXPANSION_STEP;
+      possible_room.y += expansion_direction.y * EXPANSION_STEP;
     }
-
-    if topology.n_of_rooms >= MAX_GENERATED_ROOMS { break; }
+  
+    created_room_id, _ := create_room(terrain,possible_room);
+  
+    connect_rooms(terrain, created_room_id, random_id);
+  
+    expansion_direction = directions[rand_int32_range(0,4)];
+    random_id = rand_int32_range(4,topology.n_of_rooms);
   }
-
-  starting_room := topology.rooms[0].rect;
+  
+  starting_room := topology.rooms[topology.n_of_rooms-1].rect;
   enter = { starting_room.x , starting_room.y };
-
+  
   topology.boss_room_id = topology.n_of_rooms - 1;
-
+  
   n_of_interconnections := 0;
   for i in 0..<MAX_CONNECTION_ATTEMPTS{
-    random_id1 := rand_int32_range(0,topology.n_of_rooms);
-    random_id2 := rand_int32_range(0,topology.n_of_rooms);
-
+    random_id1 := rand_int32_range(4,topology.n_of_rooms); // we use for to not interconnect boss room pattern
+    random_id2 := rand_int32_range(4,topology.n_of_rooms);
+  
     hop_distance := random_id1 - random_id2;
     if hop_distance < 0 { hop_distance = -hop_distance; }
-
+  
     if hop_distance <= MAX_HOP_DISTANCE { connect_rooms(terrain, random_id1, random_id2); }
-
+  
     if n_of_interconnections >= MAX_CONNECTIONS { break; }
   }
+}
+
+pick_room_spot :: proc(rect: Recti) -> Vec2i {
+  random_x := rand_int32_range(rect.x, rect.x + rect.w);
+  random_y := rand_int32_range(rect.y, rect.y + rect.h);
+
+  return Vec2i{random_x, random_y};
 }
 
 rand_int32_range :: proc(lo,hi :int) -> int{ return int(rand.uint32())%(hi-lo) + lo; }

@@ -12,6 +12,9 @@ TileType :: enum {
   Entrance,
   Ground,
   File,
+  Square,
+  Triangle,
+  Circle,
 }
 
 // @Idea(naum): Maybe test #soa
@@ -21,9 +24,18 @@ Terrain :: struct {
   is_tile_visible       : [TERRAIN_H][TERRAIN_W]bool,
   is_tile_hidden        : [TERRAIN_H][TERRAIN_W]bool,
 
+  is_button_pressed : [3]bool,
+
   enter : Vec2i, // @CleanUp(naum): remove?
 
   topology: Topology,
+}
+
+get_button_id :: proc(tile : TileType) -> int {
+  if (tile == .Square) { return 0; }
+  if (tile == .Triangle) { return 1; }
+  if (tile == .Circle) { return 2; }
+  return -1;
 }
 
 create_test_terrain :: proc(game_manager: ^GameManager) {
@@ -95,18 +107,6 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
 
   // mock terrain generation TODO(luciano): remove
-
-  /*
-  id1, _ := create_room(&terrain, Recti{5, 15, 5, 5});
-  id3, _ := create_room(&terrain, Recti{6, 12, 2, 2});
-  id4, _ := create_room(&terrain, Recti{1, 12, 2, 2});
-  id5, _ := create_room(&terrain, Recti{15, 12, 2, 2});
-  id6, _ := create_room(&terrain, Recti{1, 17, 2, 2});
-  connect_rooms(&terrain, id1, id3);
-  connect_rooms(&terrain, id1, id4);
-  connect_rooms(&terrain, id1, id5);
-  connect_rooms(&terrain, id1, id6);
-  */
 }
 
 create_terrain :: proc(game_manager: ^GameManager) {
@@ -119,8 +119,24 @@ create_terrain :: proc(game_manager: ^GameManager) {
   }
   clear_enemy_container(&enemy_container);
 
-  //generate_rooms(&terrain);
-  create_boss_room_template(&terrain);
+  generate_rooms(&terrain);
+
+  player.pos = terrain.enter;
+
+  clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
+}
+
+create_boss_test_terrain:: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      terrain.tile_type[i][j] = .None;
+    }
+  }
+  clear_enemy_container(&enemy_container);
+
+  create_boss_room(&terrain);
 
   player.pos = terrain.enter;
 
