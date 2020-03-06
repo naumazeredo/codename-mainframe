@@ -4,8 +4,6 @@ import "core:fmt"
 
 import sdl "shared:odin-sdl2"
 
-TILE_SIZE :: 32;
-
 TERRAIN_H :: 256;
 TERRAIN_W :: 256;
 
@@ -64,6 +62,13 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
   };
+
+  /*
+  custom_terrain := [][]u8 {
+    { 1 }
+  };
+  */
+
 
   for row, i in custom_terrain {
     for elem, j in row {
@@ -129,6 +134,7 @@ update_terrain_clock_tick :: proc(game_manager: ^GameManager) {
     for j in 0..<TERRAIN_W {
       terrain.is_tile_being_scanned[i][j] = false;
       terrain.is_tile_visible[i][j] = false;
+      //terrain.is_tile_visible[i][j] = true;
     }
   }
 }
@@ -169,27 +175,4 @@ is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
 
 is_pos_valid :: proc(pos: Vec2i) -> bool {
   return pos.x >= 0 && pos.x < TERRAIN_W && pos.y >= 0 && pos.y < TERRAIN_H;
-}
-
-// @XXX
-tile_to_rect :: proc(i, j : int) -> Rect {
-  return Rect {
-    f32(j * TILE_SIZE), f32(i * TILE_SIZE),
-    f32(TILE_SIZE), f32(TILE_SIZE)
-  };
-}
-
-tile_pos :: proc(i, j : int) -> Vec2 {
-  return Vec2{
-    f32(j * TILE_SIZE), f32(i * TILE_SIZE),
-  };
-}
-
-tile_to_sdlrect :: proc(i, j : int) -> sdl.Rect {
-  return sdl.Rect {
-    i32(j * TILE_SIZE),
-    i32(i * TILE_SIZE),
-    TILE_SIZE,
-    TILE_SIZE
-  };
 }

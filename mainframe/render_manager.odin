@@ -7,12 +7,14 @@ import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
 import sdl_image "shared:odin-sdl2/image"
 
-TEXTURE_TOTAL :: 2;
+TILE_SIZE   :: Vec2i { 32, 24 };
+
+TEXTURE_TOTAL :: 4;
 
 CPU_COUNT_WIDTH     :: 8;
 CPU_COUNT_HEIGHT    :: 10;
 CPU_COUNT_SPACING   :: 2;
-CPU_COUNT_OFFSET_Y  :: -5;
+CPU_COUNT_OFFSET_Y  :: -2;
 CPU_FILLED_COLOUR   :: Color {200, 200, 255, 255};
 CPU_UNFILLED_COLOUR :: Color {64, 64, 64, 255};
 CPU_CAN_ACT_COLOUR  :: Color {100, 255, 100, 255};
@@ -88,7 +90,7 @@ create_render_manager :: proc(render_manager: ^RenderManager) {
   fmt.printf("render size: (%d, %d)\n", w_render, h_render);
 
   //
-  load_textures(render_manager);
+  _load_textures(render_manager);
 }
 
 destroy_render_manager :: proc(render_manager: ^RenderManager) {
@@ -97,7 +99,7 @@ destroy_render_manager :: proc(render_manager: ^RenderManager) {
   sdl.destroy_renderer(renderer);
 }
 
-load_texture :: proc(index: u8, path: cstring, render_manager: ^RenderManager) {
+_load_texture :: proc(index: u8, path: cstring, render_manager: ^RenderManager) {
   using render_manager;
 
   textures[index] = sdl_image.load_texture(renderer, path);
@@ -112,11 +114,14 @@ load_texture :: proc(index: u8, path: cstring, render_manager: ^RenderManager) {
   texture_sizes[index] = { int(w), int(h) };
 }
 
-load_textures :: proc(render_manager: ^RenderManager) {
+_load_textures :: proc(render_manager: ^RenderManager) {
   using render_manager;
 
-  load_texture(0, "assets/virusy.png", render_manager);
-  load_texture(1, "assets/guardy.png", render_manager);
+  // @Todo(naum): create enum to map textures to a better thing than a hardcoded number
+  _load_texture(0, "assets/virusy.png", render_manager);
+  _load_texture(1, "assets/guardy.png", render_manager);
+  _load_texture(2, "assets/tile-32-24.png", render_manager);
+  _load_texture(3, "assets/tile-32-24-dark.png", render_manager);
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
@@ -124,14 +129,15 @@ render :: proc(game_manager : ^GameManager) {
   using game_manager;
 
   // Update render information
+  /*
   // @XXX(naum): use update_camera_pos?
-  //if render_manager.update_camera_pos {
-    render_manager.camera_pos = Vec2i {
-      player.pos.x * TILE_SIZE + TILE_SIZE/2 - VIEW_W/2,
-      player.pos.y * TILE_SIZE + TILE_SIZE/2 - VIEW_H/2
-    };
-    //render_manager.update_camera_pos = false;
-  //}
+  if render_manager.update_camera_pos {
+    render_manager.camera_pos = player.pos * TILE_SIZE + TILE_SIZE / 2 - { VIEW_W / 2, VIEW_H / 2 };
+    render_manager.update_camera_pos = false;
+  }
+  */
+
+  render_manager.camera_pos = player.pos * TILE_SIZE + TILE_SIZE / 2 - { VIEW_W / 2, VIEW_H / 2 };
 
   viewport_rect : sdl.Rect;
 
@@ -145,16 +151,19 @@ render :: proc(game_manager : ^GameManager) {
     case .MainMenu :
       fmt.println("main menu!");
     case .Play :
+      render_player_vision(game_manager);
       render_terrain(game_manager);
+
+      render_scan(game_manager);
+      render_player_next_action(game_manager);
+
       render_player(game_manager);
       render_enemies(game_manager);
-      render_scan(game_manager);
 
       // HUD
       render_clock_debugger(game_manager);
       render_inventory(game_manager);
 
-      render_player_next_action(game_manager);
       render_cpu_counts(game_manager);
   }
 
@@ -164,18 +173,22 @@ render :: proc(game_manager : ^GameManager) {
 render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
 
+  /*
   NONE_DARK_COLOR   :: Color {0, 0, 0, 0};
   NONE_COLOR        :: Color {2, 2, 2, 255};
   GROUND_DARK_COLOR :: Color {20, 20, 20, 255};
   GROUND_COLOR      :: Color {100, 100, 100, 255};
   FILE_COLOR        :: Color {80, 200, 60, 255};
+  */
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      if terrain.is_tile_hidden[i][j] { continue; }
+      //if terrain.is_tile_hidden[i][j] { continue; }
+      if terrain.tile_type[i][j] == .None { continue; }
 
       tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
 
+      /*
       tile_rect := sdl.Rect {
         i32(tile_pos.x + 1), i32(tile_pos.y + 1),
         i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
@@ -201,6 +214,58 @@ render_terrain :: proc(game_manager : ^GameManager) {
 
       sdl.set_render_draw_color(render_manager.renderer, color.r, color.g, color.b, color.a);
       sdl.render_fill_rect(render_manager.renderer, &tile_rect);
+      */
+
+      rect := sdl.Rect {
+        i32(tile_pos.x), i32(tile_pos.y),
+        i32(render_manager.texture_sizes[1].x),
+        i32(render_manager.texture_sizes[1].y),
+      };
+
+      texture_id : u8;
+
+      if terrain.is_tile_visible[i][j] {
+        #partial switch terrain.tile_type[i][j] {
+          case .Ground   : texture_id = 2;
+          case .File     : texture_id = 2;
+          case .Entrance : texture_id = 2;
+        }
+      } else {
+        #partial switch terrain.tile_type[i][j] {
+          case .Ground   : texture_id = 3;
+          case .File     : texture_id = 3;
+          case .Entrance : texture_id = 3;
+        }
+      }
+
+      sdl.render_copy(
+        render_manager.renderer,
+        render_manager.textures[texture_id],
+        nil,
+        &rect
+      );
+    }
+  }
+}
+
+render_player_vision :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      if terrain.tile_type[i][j] != .None || !terrain.is_tile_visible[i][j] {
+        continue;
+      }
+
+      tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
+
+      rect := sdl.Rect {
+        i32(tile_pos.x), i32(tile_pos.y),
+        i32(TILE_SIZE.x), i32(TILE_SIZE.y)
+      };
+
+      sdl.set_render_draw_color(render_manager.renderer, 4, 4, 4, 255);
+      sdl.render_fill_rect(render_manager.renderer, &rect);
     }
   }
 }
@@ -221,8 +286,15 @@ render_scan :: proc(game_manager : ^GameManager) {
 
       tile_rect := sdl.Rect {
         i32(tile_pos.x + 1), i32(tile_pos.y + 1),
-        i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
+        i32(TILE_SIZE.x - 2), i32(TILE_SIZE.y - 2)
       };
+
+      /*
+      tile_rect := sdl.Rect {
+        i32(tile_pos.x), i32(tile_pos.y),
+        i32(TILE_SIZE.x), i32(TILE_SIZE.y)
+      };
+      */
 
       sdl.set_render_draw_color(
         render_manager.renderer,
@@ -238,8 +310,8 @@ render_player :: proc(game_manager : ^GameManager) {
   using game_manager;
 
   pos := TILE_SIZE * player.pos - render_manager.camera_pos;
-  pos += Vec2i { TILE_SIZE/2, TILE_SIZE/2 };
-  pos -= Vec2i { render_manager.texture_sizes[0].x/2, render_manager.texture_sizes[0].y/2 };
+  pos += TILE_SIZE / 2;
+  pos -= { render_manager.texture_sizes[0].x / 2, render_manager.texture_sizes[0].y };
 
   rect := sdl.Rect {
     i32(pos.x), i32(pos.y),
@@ -268,8 +340,8 @@ render_enemies :: proc(game_manager: ^GameManager) {
     if !terrain.is_tile_visible[enemy_pos.y][enemy_pos.x] { continue; }
 
     pos := TILE_SIZE * enemy_container.pos[i] - render_manager.camera_pos;
-    pos += Vec2i { TILE_SIZE/2, TILE_SIZE/2 };
-    pos -= Vec2i { render_manager.texture_sizes[1].x/2, render_manager.texture_sizes[1].y/2 };
+    pos += TILE_SIZE / 2;
+    pos -= Vec2i { render_manager.texture_sizes[1].x/2, render_manager.texture_sizes[1].y };
 
     rect := sdl.Rect {
       i32(pos.x), i32(pos.y),
@@ -295,7 +367,6 @@ render_enemies :: proc(game_manager: ^GameManager) {
       case .AlertScan : fallthrough;
       case .Alert     : color_mod = {255, 0, 0, 255};
       case .Timeout   : color_mod = {100, 100, 255, 255};
-      //case            : color_mod = {120, 20, 10, 255};
     }
 
     sdl.set_texture_color_mod(
@@ -320,12 +391,14 @@ render_cpu_counts :: proc(game_manager: ^GameManager) {
   using game_manager;
   pos : Vec2i;
 
-
   // Player CPU count
-  pos = player.pos * TILE_SIZE - render_manager.camera_pos;
+  pos = TILE_SIZE * player.pos - render_manager.camera_pos;
+  pos += TILE_SIZE / 2;
+  pos -= { render_manager.texture_sizes[0].x / 2, render_manager.texture_sizes[0].y };
+
   render_cpu_count(
     player.cpu_count, player.cpu_total,
-    { pos.x + TILE_SIZE/2, pos.y },
+    pos,
     game_manager
   );
 
@@ -334,11 +407,14 @@ render_cpu_counts :: proc(game_manager: ^GameManager) {
     enemy_pos := enemy_container.pos[i];
     if !terrain.is_tile_visible[enemy_pos.y][enemy_pos.x] { continue; }
 
-    pos = enemy_container.pos[i] * TILE_SIZE - render_manager.camera_pos;
+    pos = TILE_SIZE * enemy_container.pos[i] - render_manager.camera_pos;
+    pos += TILE_SIZE / 2;
+    pos -= { render_manager.texture_sizes[1].x / 2, render_manager.texture_sizes[1].y };
+
     type := int(enemy_container.type[i]);
     render_cpu_count(
       enemy_container.cpu_count[i], enemy_container.cpu_total[i],
-      { pos.x + TILE_SIZE/2, pos.y },
+      pos,
       game_manager
     );
   }
@@ -349,7 +425,7 @@ render_cpu_count:: proc(cpu_count, cpu_total: u8, pivot : Vec2i, game_manager: ^
 
   total_width := int(cpu_total) * CPU_COUNT_WIDTH + (int(cpu_total)-1) * CPU_COUNT_SPACING;
 
-  pos_x := i32(pivot.x - total_width / 2);
+  pos_x := i32(pivot.x - total_width / 2 + TILE_SIZE.x / 2);
   pos_y := i32(pivot.y + CPU_COUNT_OFFSET_Y - CPU_COUNT_HEIGHT);
 
   if cpu_count == cpu_total-1 {
@@ -412,7 +488,7 @@ render_player_next_action :: proc(game_manager : ^GameManager) {
 
       rect := sdl.Rect {
         i32(pos.x + 4), i32(pos.y + 4),
-        i32(TILE_SIZE - 8), i32(TILE_SIZE - 8)
+        i32(TILE_SIZE.x - 8), i32(TILE_SIZE.y - 8)
       };
 
       sdl.set_render_draw_color(render_manager.renderer, 255, 255, 255, 128);
@@ -446,12 +522,12 @@ render_clock_debugger :: proc(game_manager : ^GameManager) {
 
   foreground_rect := sdl.Rect {
     i32(clock_debugger.pivot.x + 2), i32(clock_debugger.pivot.y + 2),
-    foreground_width, i32(TILE_SIZE-4)
+    foreground_width, i32(TILE_SIZE.y-4)
   };
 
   background_rect := sdl.Rect {
     i32(clock_debugger.pivot.x + 2), i32(clock_debugger.pivot.y + 2),
-    i32(CLOCK_DEBUGGER_WIDTH - 4), i32(TILE_SIZE - 4)
+    i32(CLOCK_DEBUGGER_WIDTH - 4), i32(TILE_SIZE.y - 4)
   };
 
   sdl.set_render_draw_color(render_manager.renderer, 20, 255, 255, 255);
