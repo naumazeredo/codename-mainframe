@@ -288,6 +288,7 @@ render_enemies :: proc(game_manager: ^GameManager) {
     sdl.render_fill_rect(render_manager.renderer, &rect);
     */
 
+    // @Todo(naum): not use color modulation, use different sprites
     color_mod := Color { 255, 255, 255, 255 };
 
     #partial switch enemy_container.state[i] {
