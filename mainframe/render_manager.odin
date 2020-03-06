@@ -5,6 +5,9 @@ import "core:fmt"
 
 import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
+import sdl_image "shared:odin-sdl2/image"
+
+TEXTURE_TOTAL :: 2;
 
 CPU_COUNT_WIDTH     :: 8;
 CPU_COUNT_HEIGHT    :: 10;
@@ -24,6 +27,10 @@ RenderManager :: struct {
   font     : ^sdl_ttf.Font,
   window   : ^sdl.Window,
   renderer : ^sdl.Renderer,
+
+  // Textures
+  textures      : [TEXTURE_TOTAL]^sdl.Texture,
+  texture_sizes : [TEXTURE_TOTAL]Vec2i,
 
   camera_pos : Vec2i,
   //update_camera_pos : bool,
@@ -79,12 +86,37 @@ create_render_manager :: proc(render_manager: ^RenderManager) {
 
   fmt.printf("screen size: (%d, %d)\n", w, h);
   fmt.printf("render size: (%d, %d)\n", w_render, h_render);
+
+  //
+  load_textures(render_manager);
 }
 
 destroy_render_manager :: proc(render_manager: ^RenderManager) {
   using render_manager;
   sdl.destroy_window(window);
   sdl.destroy_renderer(renderer);
+}
+
+load_texture :: proc(index: u8, path: cstring, render_manager: ^RenderManager) {
+  using render_manager;
+
+  textures[index] = sdl_image.load_texture(renderer, path);
+  if textures[index] == nil {
+    fmt.printf("[error] Couldn't load texture: %s\n", path);
+    // @Todo(naum): load default texture
+    return;
+  }
+
+  w, h : i32;
+  sdl.query_texture(textures[index], nil, nil, &w, &h);
+  texture_sizes[index] = { int(w), int(h) };
+}
+
+load_textures :: proc(render_manager: ^RenderManager) {
+  using render_manager;
+
+  load_texture(0, "assets/virusy.png", render_manager);
+  load_texture(1, "assets/guardy.png", render_manager);
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
@@ -206,14 +238,26 @@ render_player :: proc(game_manager : ^GameManager) {
   using game_manager;
 
   pos := TILE_SIZE * player.pos - render_manager.camera_pos;
+  pos += Vec2i { TILE_SIZE/2, TILE_SIZE/2 };
+  pos -= Vec2i { render_manager.texture_sizes[0].x/2, render_manager.texture_sizes[0].y/2 };
 
   rect := sdl.Rect {
-    i32(pos.x + 2), i32(pos.y + 2),
-    i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
+    i32(pos.x), i32(pos.y),
+    i32(render_manager.texture_sizes[0].x),
+    i32(render_manager.texture_sizes[0].y),
   };
 
+  /*
   sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 255);
   sdl.render_fill_rect(render_manager.renderer, &rect);
+  */
+
+  sdl.render_copy(
+    render_manager.renderer,
+    render_manager.textures[0],
+    nil,
+    &rect
+  );
 }
 
 render_enemies :: proc(game_manager: ^GameManager) {
@@ -224,19 +268,46 @@ render_enemies :: proc(game_manager: ^GameManager) {
     if !terrain.is_tile_visible[enemy_pos.y][enemy_pos.x] { continue; }
 
     pos := TILE_SIZE * enemy_container.pos[i] - render_manager.camera_pos;
+    pos += Vec2i { TILE_SIZE/2, TILE_SIZE/2 };
+    pos -= Vec2i { render_manager.texture_sizes[1].x/2, render_manager.texture_sizes[1].y/2 };
 
     rect := sdl.Rect {
-      i32(pos.x + 2), i32(pos.y + 2),
-      i32(TILE_SIZE - 4), i32(TILE_SIZE - 4)
+      i32(pos.x), i32(pos.y),
+      i32(render_manager.texture_sizes[1].x),
+      i32(render_manager.texture_sizes[1].y),
     };
 
+    /*
     #partial switch enemy_container.state[i] {
       case .AlertScan : fallthrough;
       case .Alert     : sdl.set_render_draw_color(render_manager.renderer, 255, 20, 10, 255);
       case .Timeout   : sdl.set_render_draw_color(render_manager.renderer, 100, 80, 200, 255);
       case            : sdl.set_render_draw_color(render_manager.renderer, 120, 20, 10, 255);
     }
+
     sdl.render_fill_rect(render_manager.renderer, &rect);
+    */
+
+    color_mod := Color { 255, 255, 255, 255 };
+
+    #partial switch enemy_container.state[i] {
+      case .AlertScan : fallthrough;
+      case .Alert     : color_mod = {255, 0, 0, 255};
+      case .Timeout   : color_mod = {100, 100, 255, 255};
+      //case            : color_mod = {120, 20, 10, 255};
+    }
+
+    sdl.set_texture_color_mod(
+      render_manager.textures[1],
+      color_mod.r, color_mod.g, color_mod.b
+    );
+
+    sdl.render_copy(
+      render_manager.renderer,
+      render_manager.textures[1],
+      nil,
+      &rect
+    );
   }
 }
 

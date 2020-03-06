@@ -2,6 +2,7 @@ package mainframe
 
 import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
+import sdl_image "shared:odin-sdl2/image"
 
 import "core:mem"
 import "core:strings"
@@ -15,6 +16,7 @@ main :: proc() {
   defer sdl.quit();
 
   assert(sdl_ttf.init() != -1);
+  sdl_image.init(sdl_image.Init_Flags.PNG); // @Todo(naum): verify if it was successful
 
   game_manager := create_game_manager();
   defer destroy_game_manager(game_manager);
