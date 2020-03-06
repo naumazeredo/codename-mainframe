@@ -220,3 +220,47 @@ reverse :: proc(array: [dynamic]$E) -> [dynamic]E {
   }
   return rev;
 }
+
+// ----------
+// Render FPS
+// ----------
+/*
+
+add_fps_counter :: proc(renderer: ^sdl.Renderer, font: ^sdl_ttf.Font, frame_duration: f64, text_pos: ^sdl.Rect, h, w: ^i32) {
+    builder := strings.make_builder();
+    defer strings.destroy_builder(&builder);
+
+    strings.write_string(&builder, "FPS: ");
+    write_f64(&builder, 1/frame_duration);
+
+    fps_counter := strings.clone_to_cstring(strings.to_string(builder));
+    text_surface := sdl_ttf.render_utf8_solid(font, fps_counter, sdl.Color{0, 255, 0, 255});
+    text_texture := sdl.create_texture_from_surface(renderer, text_surface);
+    sdl.free_surface(text_surface);
+
+    sdl.query_texture(text_texture, nil, nil, w, h);
+    sdl.render_copy(renderer, text_texture, nil, text_pos);
+}
+
+write_f64 :: proc(builder: ^strings.Builder, v: f64, digits: uint = 6) {
+  vv := v;
+
+  if vv < 0 {
+    strings.write_byte(builder, '-');
+    vv = -vv;
+  }
+
+
+  integral : uint = auto_cast vv;
+
+  strings.write_uint(builder, integral);
+  strings.write_byte(builder, '.');
+
+  for i in 1..digits {
+    vv -= cast(f64)integral;
+    vv *= 10.0;
+    integral = auto_cast vv;
+    strings.write_uint(builder, integral);
+  }
+}
+*/

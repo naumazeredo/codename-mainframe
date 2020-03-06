@@ -11,7 +11,6 @@ TileType :: enum {
   None,
   Entrance,
   Ground,
-  File,
   Square,
   Triangle,
   Circle,
@@ -23,19 +22,13 @@ Terrain :: struct {
   is_tile_being_scanned : [TERRAIN_H][TERRAIN_W]bool,
   is_tile_visible       : [TERRAIN_H][TERRAIN_W]bool,
   is_tile_hidden        : [TERRAIN_H][TERRAIN_W]bool,
+  has_file              : [TERRAIN_H][TERRAIN_W]bool,
 
   is_button_pressed : [3]bool,
 
   enter : Vec2i, // @CleanUp(naum): remove?
 
   topology: Topology,
-}
-
-get_button_id :: proc(tile : TileType) -> int {
-  if (tile == .Square) { return 0; }
-  if (tile == .Triangle) { return 1; }
-  if (tile == .Circle) { return 2; }
-  return -1;
 }
 
 create_test_terrain :: proc(game_manager: ^GameManager) {
@@ -47,8 +40,11 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
       terrain.is_tile_being_scanned[i][j] = false;
       terrain.is_tile_visible[i][j] = false;
       terrain.is_tile_hidden[i][j] = true;
+      terrain.has_file[i][j] = false;
     }
   }
+
+  terrain.is_button_pressed = [3]bool{false, false, false};
 
   clear_enemy_container(&enemy_container);
 
@@ -58,6 +54,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   // 3 -> file
   // 4 -> patrol AMS (left)
   // 5 -> circle AMS (down)
+  /*
   custom_terrain := [][]u8 {
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -74,6 +71,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
   };
+  */
 
   /*
   custom_terrain := [][]u8 {
@@ -81,6 +79,15 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   };
   */
 
+  custom_terrain := [][]u8 {
+    { 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 2, 2, 2, 2, 0 },
+    { 0, 2, 6, 7, 8, 2, 0 },
+    { 0, 2, 2, 2, 2, 2, 0 },
+    { 0, 2, 2, 1, 2, 2, 0 },
+    { 0, 2, 2, 2, 2, 2, 0 },
+    { 0, 0, 0, 0, 0, 0, 0 },
+  };
 
   for row, i in custom_terrain {
     for elem, j in row {
@@ -93,11 +100,17 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
           terrain.tile_type[i][j] = .Entrance;
           player.pos = Vec2i { j, i };
         case 3: // file
-          terrain.tile_type[i][j] = .File;
+          terrain.has_file[i][j] = true;
         case 4: // enemy back and forth
           create_enemy(.BackAndForth, { j, i }, &enemy_container);
         case 5: // enemy circle 3x3
           create_enemy(.Circle3x3, { j, i }, &enemy_container);
+        case 6: // square
+          terrain.tile_type[i][j] = .Square;
+        case 7: // circle
+          terrain.tile_type[i][j] = .Circle;
+        case 8: // circle
+          terrain.tile_type[i][j] = .Triangle;
       }
     }
   }
@@ -150,7 +163,6 @@ update_terrain_clock_tick :: proc(game_manager: ^GameManager) {
     for j in 0..<TERRAIN_W {
       terrain.is_tile_being_scanned[i][j] = false;
       terrain.is_tile_visible[i][j] = false;
-      //terrain.is_tile_visible[i][j] = true;
     }
   }
 }
@@ -180,15 +192,23 @@ is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
   return terrain.tile_type[pos.y][pos.x] != .None;
 }
 
-is_tile_file :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
-  if pos.y < 0 || pos.y >= TERRAIN_H ||
-     pos.x < 0 || pos.x >= TERRAIN_W {
-    return false;
-  }
-
-  return terrain.tile_type[pos.y][pos.x] == .File;
-}
-
 is_pos_valid :: proc(pos: Vec2i) -> bool {
   return pos.x >= 0 && pos.x < TERRAIN_W && pos.y >= 0 && pos.y < TERRAIN_H;
+}
+
+tile_get_button_id :: proc(tile : TileType) -> int {
+  if (tile == .Square) { return 0; }
+  if (tile == .Triangle) { return 1; }
+  if (tile == .Circle) { return 2; }
+  return -1;
+}
+
+is_button_pressed :: proc(pos: Vec2i, game_manager: ^GameManager) -> bool {
+  using game_manager;
+  current_tile := terrain.tile_type[pos.y][pos.x];
+
+  id := tile_get_button_id(current_tile);
+  if id == -1 { return false; }
+
+  return terrain.is_button_pressed[id];
 }

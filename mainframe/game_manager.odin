@@ -41,7 +41,7 @@ GameManager :: struct {
   enemy_container : EnemyContainer,
 
   button_sequence : [3]TileType,
-  sequence_index : int,
+  button_sequence_index : int,
 
   clock_debugger : ClockDebugger
 }
@@ -95,6 +95,8 @@ create_game_manager :: proc() -> ^GameManager {
   button_sequence[1] = to_shuffle[1];
   button_sequence[2] = to_shuffle[2];
 
+  button_sequence_index = 0;
+
   fmt.println("button_sequence", button_sequence);
 
   return game_manager;
@@ -146,8 +148,8 @@ generate_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
   //create_terrain(game_manager);
-  create_boss_test_terrain(game_manager);
-  //create_test_terrain(game_manager);
+  //create_boss_test_terrain(game_manager);
+  create_test_terrain(game_manager);
 }
 
 check_for_player_damage :: proc(game_manager: ^GameManager) {
@@ -224,4 +226,6 @@ temp_reset_game_manager :: proc(game_manager: ^GameManager) {
   create_player(&player);
 
   generate_terrain(game_manager);
+
+  button_sequence_index = 0;
 }

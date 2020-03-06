@@ -47,7 +47,7 @@ update_player_clock_tick :: proc(game_manager: ^GameManager) {
         //
       case .Action :
         try_pick_file(game_manager);
-        try_press_button(game_manager);
+        player_try_press_button(game_manager);
     }
 
     input_manager.player_action_cache.action = .None;
@@ -81,7 +81,7 @@ can_pick_file :: proc(game_manager: ^GameManager) -> bool {
   using game_manager;
 
   return player.inventory_count != player.inventory_total &&
-         is_tile_file(player.pos, &terrain);
+         terrain.has_file[player.pos.y][player.pos.x];
 }
 
 // @Todo(naum): rename to player_pick_file
@@ -90,52 +90,42 @@ try_pick_file :: proc(game_manager: ^GameManager) {
 
   if !can_pick_file(game_manager) { return ; }
 
-  terrain.tile_type[player.pos.y][player.pos.x] = .Ground;
+  terrain.has_file[player.pos.y][player.pos.x] = false;
   player.inventory_count += 1;
 }
 
-is_over_button :: proc(game_manager: ^GameManager) -> bool{
+player_is_over_button :: proc(game_manager: ^GameManager) -> bool{
   using game_manager;
   current_tile := terrain.tile_type[player.pos.y][player.pos.x];
   return current_tile == .Circle || current_tile == .Triangle || current_tile == .Square;
 }
 
-can_press_button  :: proc(game_manager: ^GameManager) -> bool {
-  return is_over_button(game_manager) && !is_button_pressed(game_manager);
+player_can_press_button  :: proc(game_manager: ^GameManager) -> bool {
+  using game_manager;
+  return player_is_over_button(game_manager) && !is_button_pressed(player.pos, game_manager);
 }
 
-is_button_pressed :: proc(game_manager: ^GameManager) -> bool {
+player_try_press_button :: proc(game_manager: ^GameManager) {
   using game_manager;
-  current_tile := terrain.tile_type[player.pos.y][player.pos.x];
 
-  id := get_button_id(current_tile);
-  if id == -1 { return false; }
-  
-  return terrain.is_button_pressed[id];
-}
-
-
-try_press_button :: proc(game_manager: ^GameManager) {
-  using game_manager;
-  
-  if !is_over_button(game_manager) { return; }
+  if !player_can_press_button(game_manager) { return; }
 
   current_tile := terrain.tile_type[player.pos.y][player.pos.x];
 
-  id := get_button_id(current_tile);
-  if id == -1 { return ; }
-  
+  id := tile_get_button_id(current_tile);
+  assert(id != -1);
+
   if !terrain.is_button_pressed[id] {
-    if button_sequence[sequence_index] == current_tile {
+    if button_sequence[button_sequence_index] == current_tile {
       terrain.is_button_pressed[id] = true;
-      sequence_index += 1;
+      button_sequence_index += 1;
 
       fmt.println("right button!");
     } else {
       for i in 0..2 {
         terrain.is_button_pressed[i] = false;
       }
-      sequence_index = 0;
+      button_sequence_index = 0;
 
       fmt.println("wrong button!");
     }
@@ -155,6 +145,7 @@ player_take_damage :: proc(game_manager: ^GameManager) {
   for i := PLAYER_DROP_SIZE ; i < 10 ; i += 1 {
     region_pos, _ = calculate_bfs_region(
       player.pos, i, &terrain,
+      // @Todo(naum): change to not count tiles with items also
       tile_ground_and_not_start_condition
     );
 
@@ -172,6 +163,6 @@ player_take_damage :: proc(game_manager: ^GameManager) {
 
   for i in 0..<max_files_dropped {
     pos := region_pos[i];
-    terrain.tile_type[pos.y][pos.x] = .File;
+    terrain.has_file[pos.y][pos.x] = true;
   }
 }

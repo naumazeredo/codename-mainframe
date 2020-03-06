@@ -9,7 +9,7 @@ import sdl_image "shared:odin-sdl2/image"
 
 TILE_SIZE   :: Vec2i { 32, 24 };
 
-TEXTURE_TOTAL :: 4;
+TEXTURE_TOTAL :: 32;
 
 CPU_COUNT_WIDTH     :: 8;
 CPU_COUNT_HEIGHT    :: 10;
@@ -122,6 +122,15 @@ _load_textures :: proc(render_manager: ^RenderManager) {
   _load_texture(1, "assets/guardy.png", render_manager);
   _load_texture(2, "assets/tile-32-24.png", render_manager);
   _load_texture(3, "assets/tile-32-24-dark.png", render_manager);
+  _load_texture(4, "assets/file.png", render_manager);
+
+  _load_texture(5, "assets/button-square.png", render_manager);
+  _load_texture(6, "assets/button-circle.png", render_manager);
+  _load_texture(7, "assets/button-triangle.png", render_manager);
+
+  _load_texture(8, "assets/button-square-pressed.png", render_manager);
+  _load_texture(9, "assets/button-circle-pressed.png", render_manager);
+  _load_texture(10, "assets/button-triangle-pressed.png", render_manager);
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
@@ -157,6 +166,7 @@ render :: proc(game_manager : ^GameManager) {
       render_scan(game_manager);
       render_player_next_action(game_manager);
 
+      render_items(game_manager);
       render_player(game_manager);
       render_enemies(game_manager);
 
@@ -179,52 +189,19 @@ render_terrain :: proc(game_manager : ^GameManager) {
   GROUND_DARK_COLOR :: Color {20, 20, 20, 255};
   GROUND_COLOR      :: Color {100, 100, 100, 255};
   FILE_COLOR        :: Color {80, 200, 60, 255};
-  */
 
   CIRCLE_COLOR      :: Color {255, 0, 0, 255};
   TRIANGLE_COLOR    :: Color {0, 255, 0, 255};
   SQUARE_COLOR      :: Color {0, 0, 255, 255};
+  */
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      //if terrain.is_tile_hidden[i][j] { continue; }
-      if terrain.tile_type[i][j] == .None { continue; }
-
-      tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
-
-      /*
-      tile_rect := sdl.Rect {
-        i32(tile_pos.x + 1), i32(tile_pos.y + 1),
-        i32(TILE_SIZE - 2), i32(TILE_SIZE - 2)
-      };
-
-      color : Color;
-
-      if terrain.is_tile_visible[i][j] {
-        #partial switch terrain.tile_type[i][j] {
-          case .None     : color = NONE_COLOR;
-          case .Ground   : color = GROUND_COLOR;
-          case .File     : color = FILE_COLOR;
-          case .Entrance : color = GROUND_COLOR;
-          case .Circle   : color = CIRCLE_COLOR;
-          case .Triangle : color = TRIANGLE_COLOR;
-          case .Square   : color = SQUARE_COLOR;
-        }
-      } else {
-        #partial switch terrain.tile_type[i][j] {
-          case .None     : color = NONE_DARK_COLOR;
-          case .Ground   : color = GROUND_DARK_COLOR;
-          case .File     : color = GROUND_DARK_COLOR;
-          case .Entrance : color = GROUND_DARK_COLOR;
-          case .Circle   : color = GROUND_DARK_COLOR;
-          case .Triangle : color = GROUND_DARK_COLOR;
-          case .Square   : color = GROUND_DARK_COLOR;
-        }
+      if terrain.is_tile_hidden[i][j] || terrain.tile_type[i][j] == .None {
+        continue;
       }
 
-      sdl.set_render_draw_color(render_manager.renderer, color.r, color.g, color.b, color.a);
-      sdl.render_fill_rect(render_manager.renderer, &tile_rect);
-      */
+      tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
 
       rect := sdl.Rect {
         i32(tile_pos.x), i32(tile_pos.y),
@@ -232,21 +209,27 @@ render_terrain :: proc(game_manager : ^GameManager) {
         i32(render_manager.texture_sizes[1].y),
       };
 
-      texture_id : u8;
+      color_mod := Color { 255, 255, 255, 255 };
+      texture_id := 2;
 
       if terrain.is_tile_visible[i][j] {
         #partial switch terrain.tile_type[i][j] {
           case .Ground   : texture_id = 2;
-          case .File     : texture_id = 2;
           case .Entrance : texture_id = 2;
+          case .Square   : texture_id = is_button_pressed({j, i}, game_manager) ? 8 : 5;
+          case .Circle   : texture_id = is_button_pressed({j, i}, game_manager) ? 9 : 6;
+          case .Triangle : texture_id = is_button_pressed({j, i}, game_manager) ? 10 : 7;
         }
       } else {
-        #partial switch terrain.tile_type[i][j] {
-          case .Ground   : texture_id = 3;
-          case .File     : texture_id = 3;
-          case .Entrance : texture_id = 3;
-        }
+        texture_id = 2;
+        color_mod = Color { 64, 64, 64, 255 };
       }
+
+      sdl.set_texture_color_mod(
+        render_manager.textures[texture_id],
+        color_mod.r, color_mod.g, color_mod.b
+      );
+
 
       sdl.render_copy(
         render_manager.renderer,
@@ -319,6 +302,7 @@ render_scan :: proc(game_manager : ^GameManager) {
 render_player :: proc(game_manager : ^GameManager) {
   using game_manager;
 
+  // @Todo(naum): refactor this into a function. We are using this for everything!
   pos := TILE_SIZE * player.pos - render_manager.camera_pos;
   pos += TILE_SIZE / 2;
   pos -= { render_manager.texture_sizes[0].x / 2, render_manager.texture_sizes[0].y };
@@ -328,11 +312,6 @@ render_player :: proc(game_manager : ^GameManager) {
     i32(render_manager.texture_sizes[0].x),
     i32(render_manager.texture_sizes[0].y),
   };
-
-  /*
-  sdl.set_render_draw_color(render_manager.renderer, 20, 40, 200, 255);
-  sdl.render_fill_rect(render_manager.renderer, &rect);
-  */
 
   sdl.render_copy(
     render_manager.renderer,
@@ -392,6 +371,34 @@ render_enemies :: proc(game_manager: ^GameManager) {
     );
   }
 }
+
+render_items :: proc(game_manager : ^GameManager) {
+  using game_manager;
+
+  for i in 0..<TERRAIN_H {
+    for j in 0..<TERRAIN_W {
+      if !terrain.is_tile_visible[i][j] || !terrain.has_file[i][j] { continue; }
+
+      pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
+      pos += TILE_SIZE / 2;
+      pos -= { render_manager.texture_sizes[4].x / 2, render_manager.texture_sizes[4].y };
+
+      rect := sdl.Rect {
+        i32(pos.x), i32(pos.y),
+        i32(render_manager.texture_sizes[4].x),
+        i32(render_manager.texture_sizes[4].y),
+      };
+
+      sdl.render_copy(
+        render_manager.renderer,
+        render_manager.textures[4],
+        nil,
+        &rect
+      );
+    }
+  }
+}
+
 
 // -----
 //  HUD
@@ -573,43 +580,5 @@ render_inventory :: proc(game_manager: ^GameManager) {
     sdl.render_fill_rect(render_manager.renderer, &rect);
 
     pos.x += INVENTORY_FILE_WIDTH + INVENTORY_SPACING;
-  }
-}
-
-add_fps_counter :: proc(renderer: ^sdl.Renderer, font: ^sdl_ttf.Font, frame_duration: f64, text_pos: ^sdl.Rect, h, w: ^i32) {
-    builder := strings.make_builder();
-    defer strings.destroy_builder(&builder);
-
-    strings.write_string(&builder, "FPS: ");
-    write_f64(&builder, 1/frame_duration);
-
-    fps_counter := strings.clone_to_cstring(strings.to_string(builder));
-    text_surface := sdl_ttf.render_utf8_solid(font, fps_counter, sdl.Color{0, 255, 0, 255});
-    text_texture := sdl.create_texture_from_surface(renderer, text_surface);
-    sdl.free_surface(text_surface);
-
-    sdl.query_texture(text_texture, nil, nil, w, h);
-    sdl.render_copy(renderer, text_texture, nil, text_pos);
-}
-
-write_f64 :: proc(builder: ^strings.Builder, v: f64, digits: uint = 6) {
-  vv := v;
-
-  if vv < 0 {
-    strings.write_byte(builder, '-');
-    vv = -vv;
-  }
-
-
-  integral : uint = auto_cast vv;
-
-  strings.write_uint(builder, integral);
-  strings.write_byte(builder, '.');
-
-  for i in 1..digits {
-    vv -= cast(f64)integral;
-    vv *= 10.0;
-    integral = auto_cast vv;
-    strings.write_uint(builder, integral);
   }
 }

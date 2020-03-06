@@ -168,14 +168,17 @@ do_enemy_action :: proc(index: u8, game_manager: ^GameManager) {
       }
 
       enemy_step_pattern(index, game_manager);
+      //enemy_container.last_patrol_pos[index] = enemy_container.pos[index];
 
     case .Alert :
-      next_pos := queue_pop(&enemy_container.alert_path[index]);
-      move_enemy(
-        index,
-        next_pos - enemy_container.pos[index],
-        game_manager
-      );
+      if queue_len(&enemy_container.alert_path[index]) != 0 {
+        next_pos := queue_pop(&enemy_container.alert_path[index]);
+        move_enemy(
+          index,
+          next_pos - enemy_container.pos[index],
+          game_manager
+        );
+      }
 
       if queue_len(&enemy_container.alert_path[index]) == 0 {
         enemy_container.state[index] = .AlertScan;
@@ -194,16 +197,18 @@ do_enemy_action :: proc(index: u8, game_manager: ^GameManager) {
       }
 
     case .BackToPatrol :
-      next_pos := queue_pop(&enemy_container.alert_path[index]);
-      move_enemy(
-        index,
-        next_pos - enemy_container.pos[index],
-        game_manager
-      );
+      if queue_len(&enemy_container.alert_path[index]) != 0 {
+        next_pos := queue_pop(&enemy_container.alert_path[index]);
+        move_enemy(
+          index,
+          next_pos - enemy_container.pos[index],
+          game_manager
+        );
+      }
 
       if queue_len(&enemy_container.alert_path[index]) == 0 {
         enemy_container.state[index] = .Patrol;
-        enemy_step_back_pattern(index, game_manager);
+        //enemy_step_back_pattern(index, game_manager);
       }
 
     case .Timeout :
