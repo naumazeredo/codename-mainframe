@@ -21,6 +21,7 @@ Terrain :: struct {
   tile_type             : [TERRAIN_H][TERRAIN_W]TileType,
   is_tile_being_scanned : [TERRAIN_H][TERRAIN_W]bool,
   is_tile_visible       : [TERRAIN_H][TERRAIN_W]bool,
+  is_tile_hidden        : [TERRAIN_H][TERRAIN_W]bool,
 
   enter : Vec2i, // @CleanUp(naum): remove?
 
@@ -35,6 +36,7 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
       terrain.tile_type[i][j] = .None;
       terrain.is_tile_being_scanned[i][j] = false;
       terrain.is_tile_visible[i][j] = false;
+      terrain.is_tile_hidden[i][j] = true;
     }
   }
 
@@ -143,6 +145,7 @@ terrain_update_player_vision :: proc(game_manager: ^GameManager) {
                                           );
   for pos in player_vision {
     terrain.is_tile_visible[pos.y][pos.x] = true;
+    terrain.is_tile_hidden[pos.y][pos.x] = false;
   }
 }
 

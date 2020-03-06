@@ -133,13 +133,15 @@ render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
 
   NONE_DARK_COLOR   :: Color {0, 0, 0, 0};
-  NONE_COLOR        :: Color {5, 5, 5, 255};
+  NONE_COLOR        :: Color {2, 2, 2, 255};
   GROUND_DARK_COLOR :: Color {20, 20, 20, 255};
   GROUND_COLOR      :: Color {100, 100, 100, 255};
   FILE_COLOR        :: Color {80, 200, 60, 255};
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
+      if terrain.is_tile_hidden[i][j] { continue; }
+
       tile_pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
 
       tile_rect := sdl.Rect {
