@@ -6,9 +6,11 @@ import "core:fmt";
 // Basic types
 // -----------
 
-Vec2 :: [2]f32;
+//Vec2 :: [2]f32;
 Vec2i :: [2]int;
 Color :: [4]u8;
+
+WHITE :: Color { 255, 255, 255, 255 };
 
 // ---------------------
 // Basic data structures
