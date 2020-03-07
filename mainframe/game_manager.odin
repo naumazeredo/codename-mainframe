@@ -138,9 +138,9 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 generate_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  create_terrain(game_manager);
+  //create_terrain(game_manager);
   //create_boss_test_terrain(game_manager);
-  //create_test_terrain(game_manager);
+  create_test_terrain(game_manager);
 }
 
 check_for_player_damage :: proc(game_manager: ^GameManager) {

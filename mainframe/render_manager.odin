@@ -130,7 +130,9 @@ _load_textures :: proc(render_manager: ^RenderManager) {
   _load_texture(8, "assets/button-square-pressed.png", render_manager);
   _load_texture(9, "assets/button-circle-pressed.png", render_manager);
   _load_texture(10, "assets/button-triangle-pressed.png", render_manager);
+
   _load_texture(11, "assets/terminal.png", render_manager);
+  _load_texture(12, "assets/alert-symbol.png", render_manager);
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
@@ -263,12 +265,14 @@ render_units :: proc(game_manager : ^GameManager) {
           color_mod := Color { 255, 255, 255, 255 };
 
           #partial switch enemy_container.state[i] {
-            case .AlertScan : fallthrough;
-            case .Alert     : color_mod = {255, 0, 0, 255};
             case .Timeout   : color_mod = {100, 100, 255, 255};
           }
 
           _render_unit(pos, 1, color_mod, game_manager);
+
+          if enemy_container.state[i] == .Alert || enemy_container.state[i] == .AlertScan {
+            _render_above_unit(pos, 12, WHITE, 1, game_manager);
+          }
         }
       }
     }
@@ -503,6 +507,19 @@ _render_unit :: proc(pos: Vec2i, texture_id: u8, color_mod: Color, game_manager:
   render_pos := pos * TILE_SIZE - render_manager.camera_pos;
   render_pos += TILE_SIZE / 2;
   render_pos -= { render_manager.texture_sizes[texture_id].x / 2, render_manager.texture_sizes[texture_id].y };
+
+  _render_texture(render_pos, texture_id, color_mod, game_manager);
+}
+
+_render_above_unit :: proc(pos: Vec2i, texture_id: u8, color_mod: Color, unit_texture_id: u8, game_manager: ^GameManager) {
+  using game_manager;
+
+  render_pos := pos * TILE_SIZE - render_manager.camera_pos;
+  render_pos += TILE_SIZE / 2;
+  render_pos -= {
+    render_manager.texture_sizes[texture_id].x / 2,
+    render_manager.texture_sizes[texture_id].y + render_manager.texture_sizes[unit_texture_id].y + 16
+  };
 
   _render_texture(render_pos, texture_id, color_mod, game_manager);
 }
