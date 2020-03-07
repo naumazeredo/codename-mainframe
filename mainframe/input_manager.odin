@@ -122,7 +122,6 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
 }
 
 player_can_action :: proc(game_manager : ^GameManager) -> bool {
-  fmt.println(" player_can_action" );
     return can_pick_file(game_manager) ||
            player_can_press_button(game_manager) ||
            player_is_around_terminal(game_manager);

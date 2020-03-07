@@ -39,7 +39,7 @@ Terrain :: struct {
   topology: Topology,
 }
 
-create_test_terrain :: proc(game_manager: ^GameManager) {
+reset_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
   for i in 0..<TERRAIN_H {
@@ -55,6 +55,14 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   terrain.is_button_pressed = [3]bool{false, false, false};
 
   clear_enemy_container(&enemy_container);
+
+  terrain.topology = Topology{};
+}
+
+create_test_terrain :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  reset_terrain(game_manager);
 
   // 0 -> nothing
   // 1 -> player start
