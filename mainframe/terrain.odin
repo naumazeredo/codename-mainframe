@@ -1,6 +1,7 @@
 package mainframe
 
 import "core:fmt"
+import "core:math/rand"
 
 import sdl "shared:odin-sdl2"
 
@@ -14,6 +15,10 @@ TileType :: enum {
   Square,
   Triangle,
   Circle,
+  Terminal,
+  SquareSymbol,
+  TriangleSymbol,
+  CircleSymbol,
 }
 
 // @Idea(naum): Maybe test #soa
@@ -27,6 +32,9 @@ Terrain :: struct {
   is_button_pressed : [3]bool,
 
   enter : Vec2i, // @CleanUp(naum): remove?
+
+  button_sequence : [3]TileType,
+  button_sequence_index : int,
 
   topology: Topology,
 }
@@ -134,6 +142,17 @@ create_terrain :: proc(game_manager: ^GameManager) {
       terrain.tile_type[i][j] = .None;
     }
   }
+
+  to_shuffle := []TileType{TileType.Square, TileType.Triangle, TileType.Circle};
+  rand.shuffle(to_shuffle);
+
+  terrain.button_sequence[0] = to_shuffle[0];
+  terrain.button_sequence[1] = to_shuffle[1];
+  terrain.button_sequence[2] = to_shuffle[2];
+
+  fmt.println("button_sequence", terrain.button_sequence);
+
+  terrain.button_sequence_index = 0;
   clear_enemy_container(&enemy_container);
 
   generate_rooms(&terrain);
@@ -201,9 +220,9 @@ is_pos_valid :: proc(pos: Vec2i) -> bool {
 }
 
 tile_get_button_id :: proc(tile : TileType) -> int {
-  if (tile == .Square) { return 0; }
-  if (tile == .Triangle) { return 1; }
-  if (tile == .Circle) { return 2; }
+  if (tile == .Square || tile == .SquareSymbol) { return 0; }
+  if (tile == .Triangle || tile == .TriangleSymbol) { return 1; }
+  if (tile == .Circle || tile == .CircleSymbol) { return 2; }
   return -1;
 }
 

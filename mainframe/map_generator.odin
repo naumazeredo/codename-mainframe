@@ -53,7 +53,6 @@ create_boss_room :: proc(terrain : ^Terrain) {
   boss_w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
   boss_room := Recti{boss_x,boss_y,boss_w,boss_h};
 
-  terrain.tile_type[boss_y][boss_x] = .Entrance;
   terrain.enter = Vec2i{boss_x, boss_y};
 
   boss_room_id, _ = create_room(terrain, boss_room);
@@ -94,8 +93,20 @@ create_boss_room :: proc(terrain : ^Terrain) {
 place_buttons :: proc(terrain : ^Terrain) {
   using terrain.topology;
 
+  room := rooms[0].rect;
+  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Terminal;
+
+  symbol_type : TileType;
+   for i in 0..2 {
+     if terrain.button_sequence[i] == .Square { symbol_type = .SquareSymbol; }
+     if terrain.button_sequence[i] == .Circle { symbol_type = .CircleSymbol; }
+     if terrain.button_sequence[i] == .Triangle { symbol_type = .TriangleSymbol; }
+  
+     terrain.tile_type[room.y+1+room.h/2][room.x+i-1+room.w/2] = symbol_type;
+   }
+
   // TODO(luciano): randomize button placements
-  room := rooms[1].rect;
+  room = rooms[1].rect;
   terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Circle;
 
   room = rooms[2].rect;
@@ -160,8 +171,8 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   rooms_can_have_horizontal_tunnel := (upper_room.y + upper_room.h > lower_room.y);
 
   if rooms_can_have_horizontal_tunnel {
-    lower_bound := max(y1,y2);
-    upper_bound := min(y1+h1, y2+h2);
+    lower_bound := lower_room.y;
+    upper_bound := upper_room.y + upper_room.h;
     tunnel_y := rand_int32_range(lower_bound, upper_bound);
 
     for x in left_room.x + left_room.w .. right_room.x {
@@ -176,8 +187,8 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   rooms_can_have_vertical_tunnel := (left_room.x + left_room.h > right_room.x);
 
   if rooms_can_have_vertical_tunnel {
-    lower_bound := max(x1,x2);
-    upper_bound := min(x1+w1, x2+h2);
+    lower_bound := right_room.x;
+    upper_bound := left_room.x + left_room.h;
 
     tunnel_x := rand_int32_range(lower_bound,upper_bound);
 
@@ -235,7 +246,7 @@ _append_tunnel :: proc(topology : ^Topology, id1,id2: int) {
 }
 
 MAX_ROOM_ATTEMPTS :: 50;
-MAX_GENERATED_ROOMS :: 10;
+MAX_GENERATED_ROOMS :: 1;
 MAX_CONNECTION_ATTEMPTS :: 10;
 MAX_CONNECTIONS :: 3;
 MAX_HOP_DISTANCE :: 2;
@@ -256,7 +267,7 @@ generate_rooms :: proc(terrain: ^Terrain) {
   for i in 0..<MAX_GENERATED_ROOMS {
   
     expansion_start := pick_room_spot(topology.rooms[random_id].rect);
-    h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
+    h := rand_int32_range(MIN_ROOM_HEIGHT, MAX_ROOM_HEIGHT+1);
     w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
   
     possible_room := Recti{expansion_start.x,expansion_start.y,h,w};

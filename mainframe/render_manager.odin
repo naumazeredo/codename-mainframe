@@ -130,6 +130,7 @@ _load_textures :: proc(render_manager: ^RenderManager) {
   _load_texture(8, "assets/button-square-pressed.png", render_manager);
   _load_texture(9, "assets/button-circle-pressed.png", render_manager);
   _load_texture(10, "assets/button-triangle-pressed.png", render_manager);
+  _load_texture(11, "assets/terminal.png", render_manager);
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
@@ -166,6 +167,7 @@ render :: proc(game_manager : ^GameManager) {
   sdl.render_present(render_manager.renderer);
 }
 
+NULL_COLOR_MOD :: Color { 255, 255, 255, 255 };
 render_terrain :: proc(game_manager : ^GameManager) {
   using game_manager;
 
@@ -176,16 +178,20 @@ render_terrain :: proc(game_manager : ^GameManager) {
       }
 
       pos := Vec2i{ j, i } * TILE_SIZE - render_manager.camera_pos;
-      color_mod := Color { 255, 255, 255, 255 };
       texture_id : u8 = 2;
+      color_mod := NULL_COLOR_MOD;
 
       if terrain.is_tile_visible[i][j] {
         #partial switch terrain.tile_type[i][j] {
-          case .Ground   : texture_id = 2;
-          case .Entrance : texture_id = 2;
-          case .Square   : texture_id = is_button_pressed({j, i}, game_manager) ? 8 : 5;
-          case .Circle   : texture_id = is_button_pressed({j, i}, game_manager) ? 9 : 6;
-          case .Triangle : texture_id = is_button_pressed({j, i}, game_manager) ? 10 : 7;
+          case .Ground         : texture_id = 2;
+          case .Entrance       : texture_id = 2;
+          case .Square         : texture_id = is_button_pressed({j, i}, game_manager) ? 8 : 5;
+          case .Circle         : texture_id = is_button_pressed({j, i}, game_manager) ? 9 : 6;
+          case .Triangle       : texture_id = is_button_pressed({j, i}, game_manager) ? 10 : 7;
+          case .SquareSymbol   : texture_id = is_button_pressed({j, i}, game_manager) ? 8 : 5;
+          case .CircleSymbol   : texture_id = is_button_pressed({j, i}, game_manager) ? 9 : 6;
+          case .TriangleSymbol : texture_id = is_button_pressed({j, i}, game_manager) ? 10 : 7;
+          case .Terminal       : handle_render_terminal(game_manager, pos); continue;
         }
       } else {
         texture_id = 2;
@@ -195,6 +201,14 @@ render_terrain :: proc(game_manager : ^GameManager) {
       _render_texture(pos, texture_id, color_mod, game_manager);
     }
   }
+}
+
+handle_render_terminal :: proc(game_manager : ^GameManager, pos : Vec2i) {
+  using game_manager;
+  color_mod := NULL_COLOR_MOD;
+
+  _render_texture(pos, 2, color_mod, game_manager);
+  _render_texture(pos, 11, color_mod, game_manager);
 }
 
 render_player_vision :: proc(game_manager : ^GameManager) {

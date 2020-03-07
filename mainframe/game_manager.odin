@@ -1,7 +1,6 @@
 package mainframe
 
 import "core:fmt"
-import "core:math/rand"
 
 import sdl "shared:odin-sdl2"
 import sdl_ttf "shared:odin-sdl2/ttf"
@@ -40,8 +39,6 @@ GameManager :: struct {
   player  : Player,
   enemy_container : EnemyContainer,
 
-  button_sequence : [3]TileType,
-  button_sequence_index : int,
 
   clock_debugger : ClockDebugger
 }
@@ -84,20 +81,6 @@ create_game_manager :: proc() -> ^GameManager {
   // ------
 
   create_player(&player);
-
-  // ------
-  // Boss gameplay
-  // ------
-  to_shuffle := []TileType{TileType.Square, TileType.Triangle, TileType.Circle};
-  rand.shuffle(to_shuffle);
-
-  button_sequence[0] = to_shuffle[0];
-  button_sequence[1] = to_shuffle[1];
-  button_sequence[2] = to_shuffle[2];
-
-  button_sequence_index = 0;
-
-  fmt.println("button_sequence", button_sequence);
 
   return game_manager;
 }
@@ -147,9 +130,9 @@ start_new_frame :: proc(game_manager: ^GameManager) {
 generate_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  //create_terrain(game_manager);
+  create_terrain(game_manager);
   //create_boss_test_terrain(game_manager);
-  create_test_terrain(game_manager);
+  //create_test_terrain(game_manager);
 }
 
 check_for_player_damage :: proc(game_manager: ^GameManager) {
@@ -227,5 +210,5 @@ temp_reset_game_manager :: proc(game_manager: ^GameManager) {
 
   generate_terrain(game_manager);
 
-  button_sequence_index = 0;
+  terrain.button_sequence_index = 0;
 }
