@@ -175,7 +175,14 @@ render_terrain :: proc(game_manager : ^GameManager) {
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
-      if terrain.is_tile_hidden[i][j] || terrain.tile_type[i][j] == .None {
+      if terrain.is_tile_hidden[i][j] {
+        continue;
+      }
+
+      if terrain.tile_type[i][j] == .None {
+        if !terrain.is_tile_visible[i][j] {
+          _render_color_on_tile_top({ j, i }, { 4, 4, 4, 255}, 0, game_manager);
+        }
         continue;
       }
 
@@ -216,7 +223,7 @@ handle_render_terminal :: proc(game_manager : ^GameManager, pos : Vec2i) {
 render_player_vision :: proc(game_manager : ^GameManager) {
   using game_manager;
 
-  SCAN_COLOR :: Color { 4, 4, 4, 255};
+  VISION_COLOR :: Color { 12, 12, 12, 255};
 
   for i in 0..<TERRAIN_H {
     for j in 0..<TERRAIN_W {
@@ -224,7 +231,7 @@ render_player_vision :: proc(game_manager : ^GameManager) {
         continue;
       }
 
-      _render_color_on_tile_top({ j, i }, { 4, 4, 4, 255}, 0, game_manager);
+      _render_color_on_tile_top({ j, i }, VISION_COLOR, 0, game_manager);
     }
   }
 }

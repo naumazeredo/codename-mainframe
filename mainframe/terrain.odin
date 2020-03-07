@@ -152,6 +152,7 @@ generate_shuffled_buttons :: proc() -> []TileType {
 }
 
 create_terrain :: proc(game_manager: ^GameManager) {
+  fmt.println("creating terrain!");
   using game_manager;
 
   reset_terrain(game_manager);
@@ -167,11 +168,14 @@ create_terrain :: proc(game_manager: ^GameManager) {
   terrain.button_sequence_index = 0;
   clear_enemy_container(&enemy_container);
 
+  fmt.println("generating rooms");
   generate_rooms(&terrain);
+  fmt.println("generating rooms OK");
 
   player.pos = terrain.enter;
 
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
+  fmt.println("creating terrain OK!");
 }
 
 create_boss_test_terrain:: proc(game_manager: ^GameManager) {
