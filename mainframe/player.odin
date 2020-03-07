@@ -202,3 +202,10 @@ player_take_damage :: proc(game_manager: ^GameManager) {
     terrain.has_file[pos.y][pos.x] = true;
   }
 }
+
+player_can_act :: proc(game_manager : ^GameManager) -> bool {
+  return can_pick_file(game_manager) ||
+         player_can_press_button(game_manager) ||
+         player_is_around_terminal(game_manager);
+}
+

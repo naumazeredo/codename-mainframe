@@ -71,9 +71,11 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
 
       if game_state == .Play {
         // Player movement
+        /*
         if input_manager.is_player_action_tick {
           handle_player_input(e, game_manager);
         }
+        */
 
         // ----
         // Test time scale
@@ -96,9 +98,16 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
     }
   }
 
+  if game_state == .Play {
+    if input_manager.is_player_action_tick {
+      handle_player_input(game_manager);
+    }
+  }
+
   return true;
 }
 
+/*
 handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
   using game_manager;
 
@@ -120,14 +129,31 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
 
   return false;
 }
+*/
 
-player_can_action :: proc(game_manager : ^GameManager) -> bool {
-    return can_pick_file(game_manager) ||
-           player_can_press_button(game_manager) ||
-           player_is_around_terminal(game_manager);
+handle_player_input :: proc(game_manager: ^GameManager) -> bool {
+  using game_manager;
+
+  delta_pos := Vec2i { 0, 0 };
+
+  /**/ if _is_key_pressed(input_manager.player_left, input_manager.keystate)  { delta_pos = { -1,  0 }; }
+  else if _is_key_pressed(input_manager.player_right, input_manager.keystate) { delta_pos = {  1,  0 }; }
+  else if _is_key_pressed(input_manager.player_up, input_manager.keystate)    { delta_pos = {  0, -1 }; }
+  else if _is_key_pressed(input_manager.player_down, input_manager.keystate)  { delta_pos = {  0,  1 }; }
+
+  if delta_pos != {0, 0} && can_move_player(delta_pos, game_manager) {
+    input_manager.player_action_cache.action = .Move;
+    input_manager.player_action_cache.move_direction = delta_pos;
+  } else if _is_key_pressed(input_manager.player_pick, input_manager.keystate) &&
+    player_can_act(game_manager) {
+
+    input_manager.player_action_cache.action = .Action;
+  }
+
+  return false;
 }
 
-_is_key_pressed :: proc(keystate: ^u8, code: sdl.Scancode) -> bool {
+_is_key_pressed :: proc(code: sdl.Scancode, keystate: ^u8) -> bool {
   return mem.ptr_offset(keystate, int(code))^ != 0;
 }
 
