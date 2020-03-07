@@ -67,12 +67,6 @@ initialize_game_manager :: proc(game_manager: ^GameManager){
   last_game_time_clock_tick = 0;
 
   // maybe make a (reset_terrain) ??
-  for i in 0 .. 2 {
-    terrain.is_button_pressed[i] = false;
-  }
-
-  terrain.button_sequence_index = 0;
-
 
   // -------
   // Systems

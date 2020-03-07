@@ -51,8 +51,11 @@ reset_terrain :: proc(game_manager: ^GameManager) {
       terrain.has_file[i][j] = false;
     }
   }
+  for i in 0 .. 2 {
+    terrain.is_button_pressed[i] = false;
+  }
 
-  terrain.is_button_pressed = [3]bool{false, false, false};
+  terrain.button_sequence_index = 0;
 
   clear_enemy_container(&enemy_container);
 
