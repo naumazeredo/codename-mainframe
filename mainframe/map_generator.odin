@@ -171,10 +171,11 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   rooms_can_have_horizontal_tunnel := (upper_room.y + upper_room.h > lower_room.y);
 
   if rooms_can_have_horizontal_tunnel {
-    lower_bound := lower_room.y;
-    upper_bound := upper_room.y + upper_room.h;
+    lower_bound := max(y1,y2);
+    upper_bound := min(y1+h1, y2+h2);
     tunnel_y := rand_int32_range(lower_bound, upper_bound);
 
+    fmt.println("horizontal", left_room, right_room, tunnel_y);
     for x in left_room.x + left_room.w .. right_room.x {
       tile_type[tunnel_y][x] = TileType.Ground;
     }
@@ -187,11 +188,12 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
   rooms_can_have_vertical_tunnel := (left_room.x + left_room.h > right_room.x);
 
   if rooms_can_have_vertical_tunnel {
-    lower_bound := right_room.x;
-    upper_bound := left_room.x + left_room.h;
+    lower_bound := max(x1,x2);
+    upper_bound := min(x1+w1, x2+w2);
 
     tunnel_x := rand_int32_range(lower_bound,upper_bound);
 
+    fmt.println("vertical", upper_room, lower_room, tunnel_x);
     for y in upper_room.y + upper_room.h .. lower_room.y {
       tile_type[y][tunnel_x] = TileType.Ground;
     }
