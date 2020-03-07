@@ -145,21 +145,22 @@ create_test_terrain :: proc(game_manager: ^GameManager) {
   // mock terrain generation TODO(luciano): remove
 }
 
+generate_shuffled_buttons :: proc() -> []TileType {
+  buttons_to_shuffle := []TileType{TileType.Square, TileType.Triangle, TileType.Circle};
+  rand.shuffle(buttons_to_shuffle);
+  return buttons_to_shuffle;
+}
+
 create_terrain :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  for i in 0..<TERRAIN_H {
-    for j in 0..<TERRAIN_W {
-      terrain.tile_type[i][j] = .None;
-    }
-  }
+  reset_terrain(game_manager);
 
-  to_shuffle := []TileType{TileType.Square, TileType.Triangle, TileType.Circle};
-  rand.shuffle(to_shuffle);
+  shuffled_buttons := generate_shuffled_buttons();
 
-  terrain.button_sequence[0] = to_shuffle[0];
-  terrain.button_sequence[1] = to_shuffle[1];
-  terrain.button_sequence[2] = to_shuffle[2];
+  terrain.button_sequence[0] = shuffled_buttons[0];
+  terrain.button_sequence[1] = shuffled_buttons[1];
+  terrain.button_sequence[2] = shuffled_buttons[2];
 
   fmt.println("button_sequence", terrain.button_sequence);
 

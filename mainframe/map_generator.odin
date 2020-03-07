@@ -24,10 +24,17 @@ Room :: struct {
   rect : Recti,
 }
 
+is_room_out_of_bounds :: proc(room_rect : Recti) -> bool {
+  return room_rect.x + room_rect.w >= TERRAIN_W ||
+     room_rect.y + room_rect.h >= TERRAIN_H ||
+     room_rect.x < 0 ||
+     room_rect.y < 0;
+}
+
 create_room :: proc(terrain: ^Terrain, room_rect: Recti) -> (int, bool) {
   using terrain;
 
-  if room_rect.x + room_rect.w >= TERRAIN_W || room_rect.y + room_rect.h >= TERRAIN_H { return -1, false; }
+  if is_room_out_of_bounds(room_rect) { return -1, false; }
 
   for i in room_rect.x..<room_rect.x+room_rect.w {
     for j in room_rect.y..<room_rect.y+room_rect.h {
@@ -47,8 +54,8 @@ create_room :: proc(terrain: ^Terrain, room_rect: Recti) -> (int, bool) {
 create_boss_room :: proc(terrain : ^Terrain) {
   using terrain.topology;
 
-  boss_x := TERRAIN_W/2;
-  boss_y := TERRAIN_H/2;
+  boss_x := 5*MAX_ROOM_WIDTH;
+  boss_y := 5*MAX_ROOM_HEIGHT;
   boss_h := rand_int32_range(MIN_ROOM_HEIGHT, MAX_ROOM_HEIGHT+1); // can remove duplicate code by adding
   boss_w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);   // a function
   boss_room := Recti{boss_x,boss_y,boss_w,boss_h};
@@ -62,7 +69,7 @@ create_boss_room :: proc(terrain : ^Terrain) {
 
   h := rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
   w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
-  x := boss_x - w - MAX_ROOM_WIDTH/2;
+  x := boss_x - w - MAX_ROOM_WIDTH/2 - 1;
   y := boss_mid_y - h/2;
   boss_left_room := Recti{x,y,w,h};
 
@@ -71,7 +78,7 @@ create_boss_room :: proc(terrain : ^Terrain) {
 
   h = rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
   w = rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
-  x = boss_x + boss_w + MAX_ROOM_WIDTH/2;
+  x = boss_x + boss_w + MAX_ROOM_WIDTH/2 + 1;
   y = boss_mid_y - h/2;
   boss_right_room := Recti{x,y,w,h};
 
@@ -81,7 +88,7 @@ create_boss_room :: proc(terrain : ^Terrain) {
   h = rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
   w = rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
   x = boss_mid_x - w/2;
-  y = boss_y - h - MAX_ROOM_HEIGHT/2;
+  y = boss_y - h - MAX_ROOM_HEIGHT/2 - 1;
   boss_upper_room := Recti{x,y,w,w};
 
   room_id, _ = create_room(terrain,boss_upper_room);
@@ -96,25 +103,19 @@ place_buttons :: proc(terrain : ^Terrain) {
   room := rooms[0].rect;
   terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Terminal;
 
+  shuffled_buttons := generate_shuffled_buttons();
   symbol_type : TileType;
-   for i in 0..2 {
-     if terrain.button_sequence[i] == .Square { symbol_type = .SquareSymbol; }
-     if terrain.button_sequence[i] == .Circle { symbol_type = .CircleSymbol; }
-     if terrain.button_sequence[i] == .Triangle { symbol_type = .TriangleSymbol; }
-  
-     terrain.tile_type[room.y+1+room.h/2][room.x+i-1+room.w/2] = symbol_type;
-   }
+  for i in 0..2 {
+    // place terminal buttons
+    if terrain.button_sequence[i] == .Square { symbol_type = .SquareSymbol; }
+    if terrain.button_sequence[i] == .Circle { symbol_type = .CircleSymbol; }
+    if terrain.button_sequence[i] == .Triangle { symbol_type = .TriangleSymbol; }
+    terrain.tile_type[room.y+1+room.h/2][room.x+i-1+room.w/2] = symbol_type;
 
-  // TODO(luciano): randomize button placements
-  room = rooms[1].rect;
-  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Circle;
-
-  room = rooms[2].rect;
-  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Square;
-
-  room = rooms[3].rect;
-  terrain.tile_type[room.y+room.h/2][room.x+room.w/2] = .Triangle;
-
+    random_room := rooms[i+1].rect;
+    random_spot := pick_room_spot(random_room);
+    terrain.tile_type[random_spot.y][random_spot.x] = shuffled_buttons[i];
+  }
 }
 
 can_rooms_coexist:: proc(a,b : Recti) -> bool {
@@ -134,8 +135,10 @@ can_create_room :: proc (terrain : ^Terrain, room : Recti) -> bool {
 is_empty_area :: proc(terrain : ^Terrain, room :Recti) -> bool {
   using terrain;
 
-  lower_limit_y := room.y == 0 ? room.y : room.y -1;
-  lower_limit_x := room.x == 0 ? room.x : room.x -1;
+  if is_room_out_of_bounds(room) { return false; }
+
+  lower_limit_y := room.y == 0 ? 0 : room.y -1;
+  lower_limit_x := room.x == 0 ? 0 : room.x -1;
 
   for x in lower_limit_x..room.x+room.w {
     for y in lower_limit_y..room.y+room.h {
@@ -175,7 +178,6 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
     upper_bound := min(y1+h1, y2+h2);
     tunnel_y := rand_int32_range(lower_bound, upper_bound);
 
-    fmt.println("horizontal", left_room, right_room, tunnel_y);
     for x in left_room.x + left_room.w .. right_room.x {
       tile_type[tunnel_y][x] = TileType.Ground;
     }
@@ -193,7 +195,6 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
 
     tunnel_x := rand_int32_range(lower_bound,upper_bound);
 
-    fmt.println("vertical", upper_room, lower_room, tunnel_x);
     for y in upper_room.y + upper_room.h .. lower_room.y {
       tile_type[y][tunnel_x] = TileType.Ground;
     }
@@ -247,8 +248,7 @@ _append_tunnel :: proc(topology : ^Topology, id1,id2: int) {
   topology.n_of_tunnels += 1;
 }
 
-MAX_ROOM_ATTEMPTS :: 50;
-MAX_GENERATED_ROOMS :: 1;
+MAX_GENERATED_ROOMS :: 15;
 MAX_CONNECTION_ATTEMPTS :: 10;
 MAX_CONNECTIONS :: 3;
 MAX_HOP_DISTANCE :: 2;
@@ -264,7 +264,7 @@ generate_rooms :: proc(terrain: ^Terrain) {
 
   random_id := topology.boss_room_id;
   random_room := topology.rooms[random_id];
-  directions := [4][2]int{ {0,1}, {0,-1}, {1,0}, {-1,0} };
+  directions := [3][2]int{ {0,1}, {1,0}, {-1,0} };
   expansion_direction := directions[0];
   for i in 0..<MAX_GENERATED_ROOMS {
   
@@ -282,7 +282,7 @@ generate_rooms :: proc(terrain: ^Terrain) {
   
     connect_rooms(terrain, created_room_id, random_id);
   
-    expansion_direction = directions[rand_int32_range(0,4)];
+    expansion_direction = directions[rand_int32_range(0,3)];
     random_id = rand_int32_range(4,topology.n_of_rooms);
   }
   
@@ -309,7 +309,7 @@ pick_room_spot :: proc(rect: Recti) -> Vec2i {
   random_x := rand_int32_range(rect.x, rect.x + rect.w);
   random_y := rand_int32_range(rect.y, rect.y + rect.h);
 
-  return Vec2i{random_x, random_y};
+  return Vec2i{max(random_x, 0), max(random_y, 0)};
 }
 
 rand_int32_range :: proc(lo,hi :int) -> int{ return int(rand.uint32())%(hi-lo) + lo; }
