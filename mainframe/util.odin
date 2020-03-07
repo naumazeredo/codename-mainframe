@@ -9,6 +9,7 @@ import "core:fmt";
 //Vec2 :: [2]f32;
 Vec2i :: [2]int;
 Color :: [4]u8;
+Recti :: struct { x, y, w, h : int }
 
 WHITE :: Color { 255, 255, 255, 255 };
 
