@@ -49,8 +49,8 @@ create_boss_room :: proc(terrain : ^Terrain) {
 
   boss_x := TERRAIN_W/2;
   boss_y := TERRAIN_H/2;
-  boss_h := rand_int32_range(MIN_ROOM_HEIGHT, MAX_ROOM_HEIGHT+1);
-  boss_w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
+  boss_h := rand_int32_range(MIN_ROOM_HEIGHT, MAX_ROOM_HEIGHT+1); // can remove duplicate code by adding
+  boss_w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);   // a function
   boss_room := Recti{boss_x,boss_y,boss_w,boss_h};
 
   terrain.enter = Vec2i{boss_x, boss_y};

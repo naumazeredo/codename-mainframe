@@ -43,8 +43,7 @@ GameManager :: struct {
   clock_debugger : ClockDebugger
 }
 
-create_game_manager :: proc() -> ^GameManager {
-  game_manager := new(GameManager);
+initialize_game_manager :: proc(game_manager: ^GameManager){
   using game_manager;
 
   // -----
@@ -67,6 +66,14 @@ create_game_manager :: proc() -> ^GameManager {
   clock_ticks = 0;
   last_game_time_clock_tick = 0;
 
+  // maybe make a (reset_terrain) ??
+  for i in 0 .. 2 {
+    terrain.is_button_pressed[i] = false;
+  }
+
+  terrain.button_sequence_index = 0;
+
+
   // -------
   // Systems
   // -------
@@ -75,6 +82,13 @@ create_game_manager :: proc() -> ^GameManager {
 
   create_input_manager(&input_manager);
   create_render_manager(&render_manager);
+}
+
+create_game_manager :: proc() -> ^GameManager {
+  game_manager := new(GameManager);
+  using game_manager;
+
+  initialize_game_manager(game_manager);
 
   // ------
   // Player

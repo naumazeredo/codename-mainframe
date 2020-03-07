@@ -113,12 +113,19 @@ handle_player_input :: proc(e: sdl.Event, game_manager: ^GameManager) -> bool {
     input_manager.player_action_cache.action = .Move;
     input_manager.player_action_cache.move_direction = delta_pos;
   } else if _is_scancode_pressed(e, input_manager.player_pick) &&
-    can_pick_file(game_manager) || player_can_press_button(game_manager) {
+    player_can_action(game_manager) {
 
     input_manager.player_action_cache.action = .Action;
   }
 
   return false;
+}
+
+player_can_action :: proc(game_manager : ^GameManager) -> bool {
+  fmt.println(" player_can_action" );
+    return can_pick_file(game_manager) ||
+           player_can_press_button(game_manager) ||
+           player_is_around_terminal(game_manager);
 }
 
 _is_key_pressed :: proc(keystate: ^u8, code: sdl.Scancode) -> bool {

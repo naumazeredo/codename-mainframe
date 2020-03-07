@@ -46,8 +46,11 @@ update_player_clock_tick :: proc(game_manager: ^GameManager) {
       case .UseScript :
         //
       case .Action :
-        try_pick_file(game_manager);
-        player_try_press_button(game_manager);
+        ok := try_pick_file(game_manager);
+        if ok { break; }
+        ok = player_try_press_button(game_manager);
+        if ok { break; }
+        player_try_access_terminal(game_manager);
     }
 
     input_manager.player_action_cache.action = .None;
@@ -85,13 +88,15 @@ can_pick_file :: proc(game_manager: ^GameManager) -> bool {
 }
 
 // @Todo(naum): rename to player_pick_file
-try_pick_file :: proc(game_manager: ^GameManager) {
+try_pick_file :: proc(game_manager: ^GameManager) -> bool{
   using game_manager;
 
-  if !can_pick_file(game_manager) { return ; }
+  if !can_pick_file(game_manager) { return false; }
 
   terrain.has_file[player.pos.y][player.pos.x] = false;
   player.inventory_count += 1;
+
+  return true;
 }
 
 player_is_over_button :: proc(game_manager: ^GameManager) -> bool{
@@ -105,10 +110,27 @@ player_can_press_button  :: proc(game_manager: ^GameManager) -> bool {
   return player_is_over_button(game_manager) && !is_button_pressed(player.pos, game_manager);
 }
 
-player_try_press_button :: proc(game_manager: ^GameManager) {
+player_is_around_terminal :: proc(game_manager: ^GameManager) -> bool {
+  using game_manager;
+  valid_directions := [9][2]int{{-1,-1}, {-1, 0}, {-1, 1}, {0, -1}, {0,0}, {0, 1}, {1, -1}, {1, 0}, {1,1}};
+
+  possible_pos : Vec2i ;
+  for i in 0 .. 8 {
+    x := player.pos.x + valid_directions[i].x;
+    y := player.pos.y + valid_directions[i].y;
+    if x < 0 || y < 0 ||
+       x >= TERRAIN_W || y >= TERRAIN_H { continue; }
+
+    if terrain.tile_type[y][x] == TileType.Terminal { return true; }
+  }
+
+  return false;
+}
+
+player_try_press_button :: proc(game_manager: ^GameManager) -> bool{
   using game_manager;
 
-  if !player_can_press_button(game_manager) { return; }
+  if !player_can_press_button(game_manager) { return false; }
 
   current_tile := terrain.tile_type[player.pos.y][player.pos.x];
 
@@ -129,6 +151,20 @@ player_try_press_button :: proc(game_manager: ^GameManager) {
 
       fmt.println("wrong button!");
     }
+
+    return true;
+  }
+
+  return false;
+}
+
+player_try_access_terminal :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  if player_is_around_terminal(game_manager) && terrain.button_sequence_index == 3 {
+    initialize_game_manager(game_manager);
+
+    generate_terrain(game_manager);
   }
 }
 
