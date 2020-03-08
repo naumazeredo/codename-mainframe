@@ -257,6 +257,7 @@ MIN_ROOM_WIDTH :: 4;
 MAX_ROOM_HEIGHT :: 10;
 MIN_ROOM_HEIGHT :: 4;
 EXPANSION_STEP :: 5;
+MAX_EXPANSION_ATTEMPTS :: 10;
 generate_rooms :: proc(terrain: ^Terrain) {
   using terrain;
 
@@ -265,7 +266,8 @@ generate_rooms :: proc(terrain: ^Terrain) {
   random_id := topology.boss_room_id;
   random_room := topology.rooms[random_id];
   directions := [3][2]int{ {0,1}, {1,0}, {-1,0} };
-  expansion_direction := directions[0];
+  expansion_index := 0;
+  expansion_direction := directions[expansion_index];
   for i in 0..<MAX_GENERATED_ROOMS {
   
     expansion_start := pick_room_spot(topology.rooms[random_id].rect);
@@ -273,9 +275,19 @@ generate_rooms :: proc(terrain: ^Terrain) {
     w := rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
   
     possible_room := Recti{expansion_start.x,expansion_start.y,h,w};
+    expansion_attempts := 0;
     for !is_empty_area(terrain,possible_room) {
+      expansion_attempts +=1;
       possible_room.x += expansion_direction.x * EXPANSION_STEP;
       possible_room.y += expansion_direction.y * EXPANSION_STEP;
+
+      if expansion_attempts >= MAX_EXPANSION_ATTEMPTS {
+        expansion_index = (expansion_index + 1)% 3;
+        expansion_direction = directions[expansion_index];
+
+        possible_room = Recti{expansion_start.x,expansion_start.y,h,w};
+        expansion_attempts = 0;
+      }
     }
   
     created_room_id, _ := create_room(terrain,possible_room);
