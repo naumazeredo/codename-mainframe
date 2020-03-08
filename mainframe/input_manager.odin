@@ -91,6 +91,10 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
           fmt.printf("game_time_scale %f\n", game_manager.game_time_scale);
         }
 
+        if e.key.keysym.sym == i32(sdl.SDLK_m) {
+          game_state = .GameOver;
+        }
+
         // ----
         // /Test
         // ----

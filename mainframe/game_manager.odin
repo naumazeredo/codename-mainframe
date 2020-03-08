@@ -14,6 +14,7 @@ CLOCK_TICK :: 0.3333;
 GameState :: enum {
   MainMenu,
   Play,
+  GameOver,
 }
 
 // @Todo(naum): don't use so many pointers (?)

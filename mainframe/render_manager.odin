@@ -136,7 +136,7 @@ _load_textures :: proc(render_manager: ^RenderManager) {
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
-render :: proc(game_manager : ^GameManager) {
+render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function could receive only render_manager
   using game_manager;
 
   render_manager.camera_pos = player.pos * TILE_SIZE + TILE_SIZE / 2 - { VIEW_W / 2, VIEW_H / 2 };
@@ -164,9 +164,43 @@ render :: proc(game_manager : ^GameManager) {
       render_clock_debugger(game_manager);
       render_inventory(game_manager);
       render_cpu_counts(game_manager);
+    case .GameOver:
+      render_player_vision(game_manager);
+      render_terrain(game_manager);
+      render_units(game_manager);
+
+      render_clock_debugger(game_manager);
+      render_inventory(game_manager);
+      render_game_over(&render_manager);
   }
 
   sdl.render_present(render_manager.renderer);
+}
+
+render_game_over :: proc(render_manager : ^RenderManager) {
+  using render_manager;
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
+
+  pos_upper := sdl.Rect{w_render/2 - 100, h_render/2 - 100, 200,42};
+  pos_lower := sdl.Rect{w_render/2 - 150, h_render/2 + 50, 300,42};
+  color := sdl.Color{255,255,255,200};
+
+  _render_text(render_manager, "game over", color, &pos_upper);
+  _render_text(render_manager, "press r to restart", color, &pos_lower);
+}
+
+_render_text :: proc (render_manager : ^RenderManager, text : cstring, color : sdl.Color, pos : ^sdl.Rect) {
+  using render_manager;
+
+  text_surface := sdl_ttf.render_utf8_solid(render_manager.font, text, color);
+  text_texture := sdl.create_texture_from_surface(renderer, text_surface);
+  sdl.free_surface(text_surface);
+
+  w, h := pos.w, pos.h;
+  sdl.query_texture(text_texture, nil, nil, &w, &h);
+  sdl.render_copy(renderer,text_texture, nil, pos);
 }
 
 NULL_COLOR_MOD :: Color { 255, 255, 255, 255 };

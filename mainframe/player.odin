@@ -172,7 +172,7 @@ player_take_damage :: proc(game_manager: ^GameManager) {
   using game_manager;
 
   if player.inventory_count == 0 {
-    fmt.println("player, you are dead!!!");
+    game_state = GameState.GameOver;
     return;
   }
 
