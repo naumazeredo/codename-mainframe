@@ -21,16 +21,6 @@ main :: proc() {
   game_manager := create_game_manager();
   defer destroy_game_manager(game_manager);
 
-  // -----------
-  // Test Region
-  // -----------
-
-  generate_terrain(game_manager);
-
-  // -----------
-  // /Test Region
-  // -----------
-
   for {
     start_new_frame(game_manager);
 

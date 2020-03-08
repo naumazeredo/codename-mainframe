@@ -176,6 +176,8 @@ create_terrain :: proc(game_manager: ^GameManager) {
 
   clock_debugger.pivot = Vec2i{ 0, 0 }; // @Todo(naum): move this.. it's a terrain variable
   fmt.println("creating terrain OK!");
+
+  terrain_update_player_vision(game_manager);
 }
 
 create_boss_test_terrain:: proc(game_manager: ^GameManager) {

@@ -115,11 +115,11 @@ start_new_frame :: proc(game_manager: ^GameManager) {
   real_frame_duration = _get_current_time() - real_time;
   real_time += real_frame_duration;
 
-  game_frame_duration = game_time_scale * real_frame_duration;
-  game_time += game_frame_duration;
-
   // Game play logic
   if game_state == .Play {
+    game_frame_duration = game_time_scale * real_frame_duration;
+    game_time += game_frame_duration;
+
     for game_time - last_game_time_clock_tick >= CLOCK_TICK {
       clock_ticks += 1;
       last_game_time_clock_tick += CLOCK_TICK;

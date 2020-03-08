@@ -59,6 +59,7 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
     if e.type == .Key_Down {
       if game_state == .MainMenu {
         game_state = .Play;
+        generate_terrain(game_manager);
       }
 
       // @Todo(naum): remove this, only for testing
