@@ -171,8 +171,8 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
       render_terrain(game_manager);
       render_units(game_manager);
 
-      render_clock_debugger(game_manager);
       render_inventory(game_manager);
+      render_floor_hud(game_manager);
       render_game_over(&render_manager);
   }
 
