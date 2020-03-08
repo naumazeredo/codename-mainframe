@@ -162,9 +162,7 @@ player_try_access_terminal :: proc(game_manager: ^GameManager) {
   using game_manager;
 
   if player_is_around_terminal(game_manager) && terrain.button_sequence_index == 3 {
-    reset_terrain(game_manager);
-
-    generate_terrain(game_manager);
+    complete_floor(game_manager);
   }
 }
 

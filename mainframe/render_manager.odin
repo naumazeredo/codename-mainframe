@@ -65,7 +65,7 @@ create_render_manager :: proc(render_manager: ^RenderManager) {
   // @DeleteMe(naum): remove this when we have proper graphics
   sdl.set_render_draw_blend_mode(renderer, sdl.Blend_Mode.Blend);
 
-  font = sdl_ttf.open_font("arial.ttf", 40);
+  font = sdl_ttf.open_font("arial.ttf", 80);
   assert(font != nil);
   fmt.println("font loaded!");
 
@@ -165,6 +165,7 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
       render_clock_debugger(game_manager);
       render_inventory(game_manager);
       render_cpu_counts(game_manager);
+      render_floor_hud(game_manager);
     case .GameOver:
       render_player_vision(game_manager);
       render_terrain(game_manager);
@@ -176,48 +177,6 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
   }
 
   sdl.render_present(render_manager.renderer);
-}
-
-render_game_over :: proc(render_manager : ^RenderManager) {
-  using render_manager;
-
-  w_render, h_render : i32;
-  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
-
-  pos_upper := sdl.Rect{w_render/2 - 100, h_render/2 - 100, 200,42};
-  pos_lower := sdl.Rect{w_render/2 - 150, h_render/2 + 50, 300,42};
-  color := sdl.Color{255,255,255,200};
-
-  _render_text(render_manager, "game over", color, &pos_upper);
-  _render_text(render_manager, "press r to restart", color, &pos_lower);
-}
-
-render_main_menu :: proc(render_manager : ^RenderManager) {
-  using render_manager;
-
-  w_render, h_render : i32;
-  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
-
-  pos_upper := sdl.Rect{w_render/2 - 200, h_render/2 - 84, 400,42};
-  pos_mid := sdl.Rect{w_render/2 - 150, h_render/2, 300,42};
-  pos_lower := sdl.Rect{w_render/2 - 200, h_render/2 + 84, 400,42};
-  color := sdl.Color{255,255,255,255};
-
-  _render_text(render_manager, "mainframe - hacker adventures", color, &pos_upper);
-  _render_text(render_manager, "press any key to start", color, &pos_mid);
-  _render_text(render_manager, "movement: w,a,s,d ; action :e ", color, &pos_lower);
-}
-
-_render_text :: proc (render_manager : ^RenderManager, text : cstring, color : sdl.Color, pos : ^sdl.Rect) {
-  using render_manager;
-
-  text_surface := sdl_ttf.render_utf8_solid(render_manager.font, text, color);
-  text_texture := sdl.create_texture_from_surface(renderer, text_surface);
-  sdl.free_surface(text_surface);
-
-  w, h := pos.w, pos.h;
-  sdl.query_texture(text_texture, nil, nil, &w, &h);
-  sdl.render_copy(renderer,text_texture, nil, pos);
 }
 
 NULL_COLOR_MOD :: Color { 255, 255, 255, 255 };
@@ -527,6 +486,87 @@ render_inventory :: proc(game_manager: ^GameManager) {
     pos.x += INVENTORY_FILE_WIDTH + INVENTORY_SPACING;
   }
 }
+
+render_game_over :: proc(render_manager : ^RenderManager) {
+  using render_manager;
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
+
+  w := int(w_render);
+  h := int(h_render);
+
+  pos_upper := Vec2i {w/2, h/2 - 40};
+  pos_lower := Vec2i {w/2, h/2 + 60};
+  color := sdl.Color{255,255,255,200};
+
+  _render_text(render_manager, "game over", color, pos_upper, 50);
+  _render_text(render_manager, "press r to restart", color, pos_lower, 50);
+}
+
+render_main_menu :: proc(render_manager : ^RenderManager) {
+  using render_manager;
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
+
+  w := int(w_render);
+  h := int(h_render);
+
+  pos_upper := Vec2i {w/2, h/2 - 110};
+  pos_mid   := Vec2i {w/2, h/2 - 25};
+  pos_lower := Vec2i {w/2, h/2 + 60};
+  color := sdl.Color{255,255,255,255};
+
+  _render_text(render_manager, "mainframe - hacker adventures", color, pos_upper, 50);
+  _render_text(render_manager, "press any key to start", color, pos_mid, 50);
+  _render_text(render_manager, "movement: w,a,s,d ; action :e ", color, pos_lower, 50);
+}
+
+render_floor_hud :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(render_manager.renderer, &w_render, &h_render);
+  w := int(w_render);
+  h := int(h_render);
+
+  pos := Vec2i {w/2, VIEW_H - 50};
+  color := sdl.Color{255,255,255,200};
+
+  builder := strings.make_builder();
+  defer strings.destroy_builder(&builder);
+
+  strings.write_string(&builder, "floor ");
+  strings.write_uint(&builder, uint(floor_current));
+  strings.write_string(&builder, " / ");
+  strings.write_uint(&builder, uint(floor_total));
+
+  str := strings.clone_to_cstring(strings.to_string(builder));
+  _render_text(&render_manager, str, color, pos, 25);
+}
+
+
+//_render_text :: proc (render_manager : ^RenderManager, text : cstring, color : sdl.Color, pos : ^sdl.Rect) {
+_render_text :: proc (render_manager : ^RenderManager, text : cstring, color : sdl.Color, pos_mid_bot: Vec2i, h: int) {
+  using render_manager;
+
+  text_surface := sdl_ttf.render_utf8_solid(render_manager.font, text, color);
+
+  w := int(text_surface.w) * h / int(text_surface.h);
+
+  text_texture := sdl.create_texture_from_surface(renderer, text_surface);
+  sdl.free_surface(text_surface);
+
+  rect := sdl.Rect {
+    i32(pos_mid_bot.x - w/2),
+    i32(pos_mid_bot.y - h),
+    i32(w), i32(h)
+  };
+
+  sdl.render_copy(renderer,text_texture, nil, &rect);
+}
+
 
 // -----------------
 // Utility functions

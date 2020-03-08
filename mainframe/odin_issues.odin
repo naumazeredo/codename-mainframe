@@ -14,3 +14,7 @@ is_tile_walkable_condition :: proc(start: Vec2i, pos: Vec2i, dist: int, terrain:
   return is_tile_walkable(pos, terrain) && pos != start;
 }
 */
+
+/*
+can't iterate on constant arrays/slices
+*/

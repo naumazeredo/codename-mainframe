@@ -31,6 +31,9 @@ GameManager :: struct {
   clock_ticks : u32,
   last_game_time_clock_tick : f64,
 
+  floor_current : u8,
+  floor_total   : u8,
+
   game_state : GameState,
 
   input_manager  : InputManager,
@@ -39,7 +42,6 @@ GameManager :: struct {
   terrain : Terrain,
   player  : Player,
   enemy_container : EnemyContainer,
-
 
   clock_debugger : ClockDebugger
 }
@@ -67,8 +69,6 @@ initialize_game_manager :: proc(game_manager: ^GameManager){
   clock_ticks = 0;
   last_game_time_clock_tick = 0;
 
-  // maybe make a (reset_terrain) ??
-
   // -------
   // Systems
   // -------
@@ -77,6 +77,9 @@ initialize_game_manager :: proc(game_manager: ^GameManager){
 
   create_input_manager(&input_manager);
   create_render_manager(&render_manager);
+
+  floor_current = 1;
+  floor_total   = 5;
 }
 
 create_game_manager :: proc() -> ^GameManager {
@@ -160,6 +163,13 @@ check_for_player_damage :: proc(game_manager: ^GameManager) {
   if has_taken_damage {
     player_take_damage(game_manager);
   }
+}
+
+complete_floor :: proc(game_manager: ^GameManager) {
+  using game_manager;
+
+  floor_current += 1;
+  generate_terrain(game_manager);
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {
