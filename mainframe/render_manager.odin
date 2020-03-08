@@ -133,6 +133,7 @@ _load_textures :: proc(render_manager: ^RenderManager) {
 
   _load_texture(11, "assets/terminal.png", render_manager);
   _load_texture(12, "assets/alert-symbol.png", render_manager);
+  _load_texture(13, "assets/fatty.png", render_manager);
 }
 
 // @Note(naum): remember Mac issue with screen size vs render size
@@ -324,8 +325,9 @@ render_units :: proc(game_manager : ^GameManager) {
           #partial switch enemy_container.state[i] {
             case .Timeout   : color_mod = {100, 100, 255, 255};
           }
+          texture_id := texture_id_from_enemy_type(enemy_container.type[i]);
 
-          _render_unit(pos, 1, color_mod, game_manager);
+          _render_unit(pos, texture_id, color_mod, game_manager);
 
           if enemy_container.state[i] == .Alert || enemy_container.state[i] == .AlertScan {
             _render_above_unit(pos, 12, WHITE, 1, game_manager);
@@ -334,6 +336,13 @@ render_units :: proc(game_manager : ^GameManager) {
       }
     }
   }
+}
+
+//@Refactor: handle this better
+texture_id_from_enemy_type :: proc(enemy_type : EnemyType) -> u8 {
+  if enemy_type == EnemyType.BackAndForth { return 1; }
+  if enemy_type == EnemyType.Circle3x3 { return 13; }
+  return 0;
 }
 
 // -----

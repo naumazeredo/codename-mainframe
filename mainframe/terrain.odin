@@ -244,6 +244,10 @@ tile_get_button_id :: proc(tile : TileType) -> int {
   return -1;
 }
 
+is_button :: proc(tile : TileType) -> bool {
+  return tile_get_button_id(tile) != -1 ;
+}
+
 is_button_pressed :: proc(pos: Vec2i, game_manager: ^GameManager) -> bool {
   using game_manager;
   current_tile := terrain.tile_type[pos.y][pos.x];
