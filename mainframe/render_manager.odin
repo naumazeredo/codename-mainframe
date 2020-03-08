@@ -505,8 +505,8 @@ render_game_over :: proc(render_manager : ^RenderManager) {
   pos_lower := Vec2i {w/2, h/2 + 60};
   color := sdl.Color{255,255,255,200};
 
-  _render_text(render_manager, "game over", color, pos_upper, 50);
-  _render_text(render_manager, "press r to restart", color, pos_lower, 50);
+  _render_text(render_manager, "GAME OVER", color, pos_upper, 50);
+  _render_text(render_manager, "press 'r' to restart", color, pos_lower, 50);
 }
 
 render_main_menu :: proc(render_manager : ^RenderManager) {
@@ -523,9 +523,9 @@ render_main_menu :: proc(render_manager : ^RenderManager) {
   pos_lower := Vec2i {w/2, h/2 + 60};
   color := sdl.Color{255,255,255,255};
 
-  _render_text(render_manager, "mainframe - hacker adventures", color, pos_upper, 50);
+  _render_text(render_manager, "Mainframe - Hacker Adventures", color, pos_upper, 50);
   _render_text(render_manager, "press any key to start", color, pos_mid, 50);
-  _render_text(render_manager, "movement: w,a,s,d ; action :e ", color, pos_lower, 50);
+  _render_text(render_manager, "movement: w,a,s,d ; action: e", color, pos_lower, 50);
 }
 
 render_win :: proc(render_manager : ^RenderManager) {
@@ -541,10 +541,10 @@ render_win :: proc(render_manager : ^RenderManager) {
 
   pos : Vec2i;
   pos = Vec2i {w/2, h/2 - 110};
-  _render_text(render_manager, "mainframe - hacker adventures", color, pos, 50);
+  _render_text(render_manager, "Mainframe - Hacker Adventures", color, pos, 50);
 
   pos = Vec2i {w/2, h/2 - 25};
-  _render_text(render_manager, "thanks for playing", color, pos, 50);
+  _render_text(render_manager, "Thanks for playing", color, pos, 50);
 
   pos = Vec2i {w/2, h/2 + 60};
   _render_text(render_manager, "by: kogyblack & skoldpadda", color, pos, 50);
