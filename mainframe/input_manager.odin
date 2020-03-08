@@ -57,6 +57,10 @@ handle_input :: proc(game_manager : ^GameManager) -> bool {
     }
 
     if e.type == .Key_Down {
+      if game_state == .MainMenu {
+        game_state = .Play;
+      }
+
       // @Todo(naum): remove this, only for testing
       if e.key.keysym.sym == sdl.SDLK_ESCAPE {
         // @Todo(naum): change game state

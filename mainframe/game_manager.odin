@@ -73,7 +73,7 @@ initialize_game_manager :: proc(game_manager: ^GameManager){
   // Systems
   // -------
 
-  game_state = .Play;
+  game_state = .MainMenu;
 
   create_input_manager(&input_manager);
   create_render_manager(&render_manager);

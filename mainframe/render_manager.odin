@@ -151,7 +151,7 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
   // @Todo(naum): use game state state
   switch game_state {
     case .MainMenu :
-      fmt.println("main menu!");
+      render_main_menu(&render_manager);
     case .Play :
       render_player_vision(game_manager);
       render_terrain(game_manager);
@@ -189,6 +189,22 @@ render_game_over :: proc(render_manager : ^RenderManager) {
 
   _render_text(render_manager, "game over", color, &pos_upper);
   _render_text(render_manager, "press r to restart", color, &pos_lower);
+}
+
+render_main_menu :: proc(render_manager : ^RenderManager) {
+  using render_manager;
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
+
+  pos_upper := sdl.Rect{w_render/2 - 200, h_render/2 - 84, 400,42};
+  pos_mid := sdl.Rect{w_render/2 - 150, h_render/2, 300,42};
+  pos_lower := sdl.Rect{w_render/2 - 200, h_render/2 + 84, 400,42};
+  color := sdl.Color{255,255,255,255};
+
+  _render_text(render_manager, "mainframe - hacker adventures", color, &pos_upper);
+  _render_text(render_manager, "press any key to start", color, &pos_mid);
+  _render_text(render_manager, "movement: w,a,s,d ; action :e ", color, &pos_lower);
 }
 
 _render_text :: proc (render_manager : ^RenderManager, text : cstring, color : sdl.Color, pos : ^sdl.Rect) {
