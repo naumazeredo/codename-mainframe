@@ -51,7 +51,7 @@ create_room :: proc(terrain: ^Terrain, room_rect: Recti) -> (int, bool) {
   return room_id, true;
 }
 
-create_boss_room :: proc(terrain : ^Terrain) {
+create_boss_room :: proc(terrain : ^Terrain, enemy_container: ^EnemyContainer) {
   using terrain.topology;
 
   boss_x := 5*MAX_ROOM_WIDTH;
@@ -75,6 +75,7 @@ create_boss_room :: proc(terrain : ^Terrain) {
 
   room_id, _ := create_room(terrain,boss_left_room);
   connect_rooms(terrain, boss_room_id, room_id);
+  generate_room_enemies(terrain, enemy_container, room_id);
 
   h = rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
   w = rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
@@ -84,6 +85,7 @@ create_boss_room :: proc(terrain : ^Terrain) {
 
   room_id, _ = create_room(terrain,boss_right_room);
   connect_rooms(terrain, boss_room_id, room_id);
+  generate_room_enemies(terrain, enemy_container, room_id);
 
   h = rand_int32_range(MIN_ROOM_HEIGHT,MAX_ROOM_HEIGHT+1);
   w = rand_int32_range(MIN_ROOM_WIDTH, MAX_ROOM_WIDTH+1);
@@ -93,6 +95,7 @@ create_boss_room :: proc(terrain : ^Terrain) {
 
   room_id, _ = create_room(terrain,boss_upper_room);
   connect_rooms(terrain, boss_room_id, room_id);
+  generate_room_enemies(terrain, enemy_container, room_id);
 
   place_buttons(terrain);
 }
@@ -258,10 +261,10 @@ MAX_ROOM_HEIGHT :: 10;
 MIN_ROOM_HEIGHT :: 4;
 EXPANSION_STEP :: 5;
 MAX_EXPANSION_ATTEMPTS :: 10;
-generate_rooms :: proc(terrain: ^Terrain) {
+generate_rooms :: proc(terrain: ^Terrain, enemy_container: ^EnemyContainer) {
   using terrain;
 
-  create_boss_room(terrain);
+  create_boss_room(terrain, enemy_container);
 
   random_id := topology.boss_room_id;
   random_room := topology.rooms[random_id];
@@ -291,8 +294,9 @@ generate_rooms :: proc(terrain: ^Terrain) {
     }
   
     created_room_id, _ := create_room(terrain,possible_room);
-  
     connect_rooms(terrain, created_room_id, random_id);
+
+    if (i != MAX_GENERATED_ROOMS-1) { generate_room_enemies(terrain, enemy_container, created_room_id); }
   
     expansion_direction = directions[rand_int32_range(0,3)];
     random_id = rand_int32_range(4,topology.n_of_rooms);
@@ -317,6 +321,27 @@ generate_rooms :: proc(terrain: ^Terrain) {
   }
 }
 
+MIN_ENEMIES_PER_ROOM :: 1;
+MAX_ENEMIES_PER_ROOM :: 3;
+
+generate_room_enemies :: proc(terrain : ^Terrain, enemy_container : ^EnemyContainer, room_id : int) {
+  room := terrain.topology.rooms[room_id].rect;
+
+  scale_max := room.w*room.h;
+  scale_value := rand_int32_range(1, MAX_ROOM_WIDTH*MAX_ROOM_HEIGHT+1);
+  max_n_of_enemies := int((scale_value/scale_max) + 1.0);
+
+  n_of_enemies := rand_int32_range(MIN_ENEMIES_PER_ROOM, max_n_of_enemies+1);
+
+  for i in 0..<n_of_enemies {
+    enemy_spot := pick_room_spot(room);
+
+    enemy_type := pick_enemy_type();
+
+    create_enemy(enemy_type, enemy_spot, enemy_container);
+  }
+}
+
 pick_room_spot :: proc(rect: Recti) -> Vec2i {
   random_x := rand_int32_range(rect.x, rect.x + rect.w);
   random_y := rand_int32_range(rect.y, rect.y + rect.h);
@@ -324,4 +349,5 @@ pick_room_spot :: proc(rect: Recti) -> Vec2i {
   return Vec2i{max(random_x, 0), max(random_y, 0)};
 }
 
+// result lies between lo inclusive and hi exclusive
 rand_int32_range :: proc(lo,hi :int) -> int{ return int(rand.uint32())%(hi-lo) + lo; }

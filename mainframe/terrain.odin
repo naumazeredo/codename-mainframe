@@ -169,7 +169,7 @@ create_terrain :: proc(game_manager: ^GameManager) {
   clear_enemy_container(&enemy_container);
 
   fmt.println("generating rooms");
-  generate_rooms(&terrain);
+  generate_rooms(&terrain, &enemy_container);
   fmt.println("generating rooms OK");
 
   player.pos = terrain.enter;
@@ -188,7 +188,7 @@ create_boss_test_terrain:: proc(game_manager: ^GameManager) {
   }
   clear_enemy_container(&enemy_container);
 
-  create_boss_room(&terrain);
+  create_boss_room(&terrain, &enemy_container);
 
   player.pos = terrain.enter;
 

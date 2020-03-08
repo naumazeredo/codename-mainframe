@@ -75,6 +75,16 @@ clear_enemy_container :: proc(enemy_container: ^EnemyContainer) {
   enemy_container.count = 0;
 }
 
+enemy_types := []EnemyType {
+  EnemyType.BackAndForth,
+  EnemyType.Circle3x3,
+}; // @Refactor: do this dynamically as we add more enemy types
+
+pick_enemy_type :: proc() -> EnemyType {
+  index := rand_int32_range(0, 2);
+  return enemy_types[index];
+}
+
 create_enemy :: proc(type : EnemyType, pos : Vec2i, enemy_container: ^EnemyContainer) {
   assert(enemy_container.count != ENEMY_MAX-1);
 
