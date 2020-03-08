@@ -153,6 +153,7 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
   switch game_state {
     case .MainMenu :
       render_main_menu(&render_manager);
+
     case .Play :
       render_player_vision(game_manager);
       render_terrain(game_manager);
@@ -166,7 +167,8 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
       render_inventory(game_manager);
       render_cpu_counts(game_manager);
       render_floor_hud(game_manager);
-    case .GameOver:
+
+    case .GameOver :
       render_player_vision(game_manager);
       render_terrain(game_manager);
       render_units(game_manager);
@@ -174,6 +176,9 @@ render :: proc(game_manager : ^GameManager) { // @Refactor(luciano): function co
       render_inventory(game_manager);
       render_floor_hud(game_manager);
       render_game_over(&render_manager);
+
+    case .Win :
+      render_win(&render_manager);
   }
 
   sdl.render_present(render_manager.renderer);
@@ -521,6 +526,28 @@ render_main_menu :: proc(render_manager : ^RenderManager) {
   _render_text(render_manager, "mainframe - hacker adventures", color, pos_upper, 50);
   _render_text(render_manager, "press any key to start", color, pos_mid, 50);
   _render_text(render_manager, "movement: w,a,s,d ; action :e ", color, pos_lower, 50);
+}
+
+render_win :: proc(render_manager : ^RenderManager) {
+  using render_manager;
+
+  w_render, h_render : i32;
+  sdl.get_renderer_output_size(renderer, &w_render, &h_render);
+
+  w := int(w_render);
+  h := int(h_render);
+
+  color := sdl.Color{255,255,255,255};
+
+  pos : Vec2i;
+  pos = Vec2i {w/2, h/2 - 110};
+  _render_text(render_manager, "mainframe - hacker adventures", color, pos, 50);
+
+  pos = Vec2i {w/2, h/2 - 25};
+  _render_text(render_manager, "thanks for playing", color, pos, 50);
+
+  pos = Vec2i {w/2, h/2 + 60};
+  _render_text(render_manager, "by: kogyblack & skoldpadda", color, pos, 50);
 }
 
 render_floor_hud :: proc(game_manager: ^GameManager) {

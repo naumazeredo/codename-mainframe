@@ -15,6 +15,7 @@ GameState :: enum {
   MainMenu,
   Play,
   GameOver,
+  Win,
 }
 
 // @Todo(naum): don't use so many pointers (?)
@@ -168,8 +169,12 @@ check_for_player_damage :: proc(game_manager: ^GameManager) {
 complete_floor :: proc(game_manager: ^GameManager) {
   using game_manager;
 
-  floor_current += 1;
-  generate_terrain(game_manager);
+  if floor_current == floor_total {
+    game_state = .Win;
+  } else {
+    floor_current += 1;
+    generate_terrain(game_manager);
+  }
 }
 
 _cap_framerate :: proc(game_manager: ^GameManager) {

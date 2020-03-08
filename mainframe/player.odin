@@ -141,15 +141,11 @@ player_try_press_button :: proc(game_manager: ^GameManager) -> bool{
     if terrain.button_sequence[terrain.button_sequence_index] == current_tile {
       terrain.is_button_pressed[id] = true;
       terrain.button_sequence_index += 1;
-
-      fmt.println("right button!");
     } else {
       for i in 0..2 {
         terrain.is_button_pressed[i] = false;
       }
       terrain.button_sequence_index = 0;
-
-      fmt.println("wrong button!");
     }
 
     return true;
