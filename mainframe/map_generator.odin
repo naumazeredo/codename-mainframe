@@ -192,7 +192,7 @@ connect_rooms :: proc(terrain: ^Terrain, id1,id2 : int) -> bool {
     return true;
   }
 
-  rooms_can_have_vertical_tunnel := (left_room.x + left_room.h > right_room.x);
+  rooms_can_have_vertical_tunnel := (left_room.x + left_room.w > right_room.x);
 
   if rooms_can_have_vertical_tunnel {
     lower_bound := max(x1,x2);
