@@ -228,7 +228,9 @@ is_tile_walkable :: proc(pos: Vec2i, terrain: ^Terrain) -> bool {
     return false;
   }
 
-  return terrain.tile_type[pos.y][pos.x] != .None;
+  tile := terrain.tile_type[pos.y][pos.x];
+
+  return  tile != .None && tile != .Terminal;
 }
 
 is_pos_valid :: proc(pos: Vec2i) -> bool {
