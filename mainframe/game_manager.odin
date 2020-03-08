@@ -80,7 +80,7 @@ initialize_game_manager :: proc(game_manager: ^GameManager){
   create_render_manager(&render_manager);
 
   floor_current = 1;
-  floor_total   = 5;
+  floor_total   = 3;
 }
 
 create_game_manager :: proc() -> ^GameManager {
